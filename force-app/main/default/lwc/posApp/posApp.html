@@ -1,0 +1,38 @@
+<template>
+    <div class="app">
+        <nav class="app-nav" aria-label="POS sections">
+            <template for:each={tabs} for:item="t">
+                <button key={t.name} class={t.cls} data-name={t.name} aria-current={t.current} onclick={handleNav}>
+                    <lightning-icon icon-name={t.icon} size="x-small" class="nav-icon"></lightning-icon>
+                    <span class="nav-label">{t.label}</span>
+                </button>
+            </template>
+        </nav>
+
+        <div class="app-body">
+            <div class={billingClass}>
+                <c-pos-billing></c-pos-billing>
+            </div>
+            <template lwc:if={showBills}>
+                <div class={billsClass}>
+                    <c-pos-bills onstartreturn={handleStartReturn}></c-pos-bills>
+                </div>
+            </template>
+            <template lwc:if={showProducts}>
+                <div class={productsClass}>
+                    <c-pos-products></c-pos-products>
+                </div>
+            </template>
+            <template lwc:if={showCustomers}>
+                <div class={customersClass}>
+                    <c-pos-customers></c-pos-customers>
+                </div>
+            </template>
+            <template lwc:if={showSettings}>
+                <div class={settingsClass}>
+                    <c-pos-settings></c-pos-settings>
+                </div>
+            </template>
+        </div>
+    </div>
+</template>

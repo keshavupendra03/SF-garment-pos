@@ -1,0 +1,12 @@
+{
+  "orgName": "Garment POS",
+  "edition": "Developer",
+  "hasSampleData": false,
+  "language": "en_US",
+  "country": "IN",
+  "settings": {
+    "lightningExperienceSettings": {
+      "enableS1DesktopEnabled": true
+    }
+  }
+}

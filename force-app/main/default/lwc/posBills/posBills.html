@@ -1,0 +1,125 @@
+<template>
+    <div class="panel">
+        <div class="panel-head">
+            <h2 class="panel-title">Bills</h2>
+            <button class="icon-btn icon-btn_ghost" title="Refresh" aria-label="Refresh bills" onclick={load}>
+                <lightning-icon icon-name="utility:refresh" size="x-small"></lightning-icon>
+            </button>
+        </div>
+
+        <div class="chips chips_scroll">
+            <template for:each={rangeChips} for:item="r">
+                <button key={r.name} class={r.cls} data-name={r.name} aria-pressed={r.pressed}
+                    onclick={handleRange}>{r.label}</button>
+            </template>
+        </div>
+
+        <template lwc:if={isCustom}>
+            <div class="custom-range">
+                <lightning-input type="date" label="From" value={fromDate} onchange={handleFromChange}></lightning-input>
+                <lightning-input type="date" label="To" value={toDate} onchange={handleToChange}></lightning-input>
+                <button class="secondary-btn" disabled={loading} onclick={load}>Show</button>
+            </div>
+        </template>
+
+        <template lwc:if={error}>
+            <p class="error-text">{error}</p>
+        </template>
+        <template lwc:if={manualPrintUrl}>
+            <a class="manual-print" href={manualPrintUrl}>Receipt didn't print? Tap here to send it to the printer</a>
+        </template>
+
+        <div class="stat-grid summary">
+            <div class="stat"><div class="stat-label">Net sales</div><div class="stat-value">{summary.net}</div></div>
+            <div class="stat"><div class="stat-label">Bills</div><div class="stat-value">{summary.count}</div></div>
+            <div class="stat"><div class="stat-label">Returns</div><div class="stat-value">{summary.returns}</div></div>
+            <div class="stat"><div class="stat-label">GST</div><div class="stat-value">{summary.tax}</div></div>
+            <div class="stat"><div class="stat-label">Discounts</div><div class="stat-value">{summary.discount}</div></div>
+        </div>
+        <div class="mode-row">
+            <template for:each={summary.byMode} for:item="m">
+                <span key={m.mode} class="mode-pill">{m.label} <strong>{m.text}</strong></span>
+            </template>
+        </div>
+    </div>
+
+    <div class="panel">
+        <lightning-input type="search" variant="label-hidden" label="Search bills" placeholder="Search bill no, name or mobile"
+            onchange={handleFilterChange}></lightning-input>
+        <div class="chips kind-row">
+            <template for:each={kindChips} for:item="k">
+                <button key={k.name} class={k.cls} data-name={k.name} aria-pressed={k.pressed}
+                    onclick={handleKind}>{k.label}</button>
+            </template>
+        </div>
+
+        <div class="list-holder">
+            <template lwc:if={loading}>
+                <lightning-spinner alternative-text="Loading bills" size="small"></lightning-spinner>
+            </template>
+
+            <template lwc:if={hasBills}>
+                <template lwc:if={useCards}>
+                    <ul class="card-list">
+                        <template for:each={visibleBills} for:item="b">
+                            <li key={b.no} class={b.cardCls}>
+                                <button class="bill-head" data-no={b.no} aria-expanded={b.expandedAttr} onclick={handleToggle}>
+                                    <span class="bill-main">
+                                        <span class="name">
+                                            {b.no}
+                                            <template lwc:if={b.isNote}><span class="kind-pill">Return</span></template>
+                                            <template lwc:if={b.returnedText}><span class="kind-pill kind-pill_soft">{b.returnedText}</span></template>
+                                        </span>
+                                        <span class="meta">{b.tm} · {b.customer}</span>
+                                    </span>
+                                    <span class="bill-side">
+                                        <span class="name">{b.gText}</span>
+                                        <span class="meta">{b.payModes}</span>
+                                    </span>
+                                </button>
+                                <template lwc:if={b.expanded}>
+                                    <div class="bill-body">
+                                        <template for:each={b.lineRows} for:item="l">
+                                            <div key={l.key} class="bill-line">
+                                                <span class="bill-line-name">{l.name} <span class="meta">{l.variant}</span></span>
+                                                <span class="meta">{l.qty}</span>
+                                                <span>{l.amount}</span>
+                                            </div>
+                                        </template>
+                                        <template lwc:if={b.hasDue}>
+                                            <span class="badge-due">On credit {b.dueText}</span>
+                                        </template>
+                                        <div class="bill-actions">
+                                            <button class="secondary-btn" data-no={b.no} onclick={handlePrint}>
+                                                <lightning-icon icon-name="utility:print" size="x-small"></lightning-icon>Print
+                                            </button>
+                                            <button class="secondary-btn" data-no={b.no} onclick={handleShare}>
+                                                <lightning-icon icon-name="utility:share" size="x-small"></lightning-icon>WhatsApp
+                                            </button>
+                                            <template lwc:if={b.canReturn}>
+                                                <button class="secondary-btn span-2" data-no={b.no} onclick={handleReturn}>
+                                                    <lightning-icon icon-name="utility:undo" size="x-small"></lightning-icon>Return / exchange
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                            </li>
+                        </template>
+                    </ul>
+                </template>
+                <template lwc:else>
+                    <lightning-datatable key-field="no" data={visibleBills} columns={columns} hide-checkbox-column
+                        onrowaction={handleRowAction}></lightning-datatable>
+                </template>
+            </template>
+            <template lwc:else>
+                <div class="empty">
+                    <lightning-icon icon-name="utility:list" size="medium"></lightning-icon>
+                    <p class="empty-title">No bills</p>
+                    <p class="empty-sub">Nothing was billed in this period.</p>
+                </div>
+            </template>
+        </div>
+    </div>
+</template>

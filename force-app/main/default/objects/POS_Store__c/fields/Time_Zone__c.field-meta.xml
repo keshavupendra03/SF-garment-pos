@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Time_Zone__c</fullName>
+    <defaultValue>&quot;Asia/Kolkata&quot;</defaultValue>
+    <inlineHelpText>Shop's time zone (e.g. Asia/Kolkata). Bill dates, times and daily bill files use it, whatever each user's own time zone is.</inlineHelpText>
+    <label>Time Zone</label>
+    <length>40</length>
+    <required>false</required>
+    <type>Text</type>
+</CustomField>

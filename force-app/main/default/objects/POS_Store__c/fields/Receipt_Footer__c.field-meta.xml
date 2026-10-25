@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Receipt_Footer__c</fullName>
+    <inlineHelpText>Printed at the bottom of every receipt, e.g. thank-you note and exchange policy.</inlineHelpText>
+    <label>Receipt Footer</label>
+    <required>false</required>
+    <type>TextArea</type>
+</CustomField>

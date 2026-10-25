@@ -1,0 +1,136 @@
+@import 'c/posStyles';
+
+.custom-range {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.custom-range lightning-input {
+    flex: 1 1 9rem;
+}
+
+.manual-print {
+    display: block;
+    margin-top: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    border: 1px dashed var(--pos-brand);
+    border-radius: var(--pos-radius);
+    color: var(--pos-brand);
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+}
+
+.summary {
+    margin-top: 0.875rem;
+}
+
+.mode-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.625rem;
+}
+
+.mode-pill {
+    padding: 0.25rem 0.625rem;
+    border-radius: 999px;
+    background: var(--pos-bg);
+    font-size: 0.8125rem;
+}
+
+.list-holder {
+    position: relative;
+    min-height: 6rem;
+    margin-top: 0.75rem;
+}
+
+.bill-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    min-height: 3.75rem;
+    padding: 0.625rem 0.875rem;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+}
+
+.bill-main,
+.bill-side {
+    display: flex;
+    flex-direction: column;
+}
+
+.bill-main {
+    min-width: 0;
+}
+
+.bill-side {
+    align-items: flex-end;
+}
+
+.bill-body {
+    padding: 0 0.875rem 0.875rem;
+    border-top: 1px dashed var(--pos-border);
+}
+
+.bill-line {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0.75rem;
+    padding: 0.375rem 0;
+    font-size: 0.875rem;
+}
+
+.bill-line-name {
+    min-width: 0;
+}
+
+.kind-row {
+    margin-top: 0.625rem;
+}
+
+.chip_small {
+    min-height: 2rem;
+    padding: 0 0.75rem;
+    font-size: 0.8125rem;
+}
+
+.card-item_note {
+    border-left: 4px solid #dd7a01;
+}
+
+.kind-pill {
+    display: inline-block;
+    margin-left: 0.375rem;
+    padding: 0 0.4375rem;
+    border-radius: 999px;
+    background: #fef1e6;
+    color: #8c4b02;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    vertical-align: middle;
+}
+
+.kind-pill_soft {
+    background: var(--pos-bg);
+    color: var(--pos-weak);
+}
+
+.span-2 {
+    grid-column: span 2;
+}
+
+.bill-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}

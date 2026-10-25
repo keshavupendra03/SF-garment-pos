@@ -1,0 +1,481 @@
+@import 'c/posStyles';
+
+.head-text {
+    min-width: 0;
+}
+
+.new-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    width: auto;
+    min-height: var(--pos-tap);
+    font-size: 0.9375rem;
+    white-space: nowrap;
+}
+
+.btn-icon {
+    --slds-c-icon-color-foreground-default: #fff;
+}
+
+.filter-row {
+    margin-top: 0.625rem;
+}
+
+.list-holder {
+    position: relative;
+    min-height: 6rem;
+}
+
+/* ---------- style cards ---------- */
+
+.style-card_inactive {
+    opacity: 0.7;
+}
+
+.style-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    min-height: 4rem;
+    padding: 0.75rem 0.875rem;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+}
+
+.style-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+}
+
+.style-badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem;
+    margin-top: 0.25rem;
+}
+
+.swatches {
+    display: inline-flex;
+    gap: 0.1875rem;
+}
+
+.style-side {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.pill {
+    padding: 0.0625rem 0.5rem;
+    border-radius: 999px;
+    background: var(--pos-bg);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.pill_low {
+    background: #fef1e6;
+    color: #8c4b02;
+}
+
+.pill_out {
+    background: var(--pos-error-soft);
+    color: var(--pos-error);
+}
+
+.style-body {
+    padding: 0 0.875rem 0.875rem;
+    border-top: 1px dashed var(--pos-border);
+}
+
+.variants {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.variant {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    min-height: 3.5rem;
+    padding: 0.375rem 0;
+    border-bottom: 1px solid var(--pos-border);
+}
+
+.variant:last-child {
+    border-bottom: 0;
+}
+
+.variant_inactive .variant-info {
+    opacity: 0.55;
+}
+
+.variant-info {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.codes {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.variant-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.375rem;
+}
+
+.mini-stepper {
+    display: inline-flex;
+    align-items: center;
+    overflow: hidden;
+    border: 1px solid var(--pos-border);
+    border-radius: 0.5rem;
+}
+
+.mini-step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 0;
+    background: var(--pos-bg);
+    cursor: pointer;
+}
+
+.mini-step:active {
+    background: var(--pos-brand-soft);
+}
+
+.stock-badge {
+    min-width: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.stock-badge_low {
+    color: #8c4b02;
+}
+
+.stock-badge_out {
+    color: var(--pos-error);
+}
+
+.chip_small {
+    min-height: 2rem;
+    padding: 0 0.625rem;
+    font-size: 0.8125rem;
+}
+
+.chip_on {
+    border-color: #91db8b;
+    background: var(--pos-success-soft);
+    color: var(--pos-success);
+}
+
+.chip_dashed {
+    border-style: dashed;
+    color: var(--pos-brand);
+}
+
+.style-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+/* ---------- editor ---------- */
+
+.editor-head {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.editor-title {
+    margin: 0;
+    font-size: 1.125rem;
+}
+
+.first-label {
+    margin-top: 0;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem 0.75rem;
+}
+
+.suggestion-chips {
+    margin-top: 0.5rem;
+}
+
+.hint {
+    margin-top: 0.5rem;
+}
+
+.picked {
+    margin-top: 0.625rem;
+}
+
+.picked-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 2.25rem;
+    padding: 0 0.25rem 0 0.75rem;
+    border-radius: 999px;
+    background: var(--pos-brand);
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.chip-x {
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.add-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.625rem;
+}
+
+.add-row lightning-input {
+    flex: 1 1 auto;
+}
+
+.fill-row {
+    max-width: 16rem;
+    margin-bottom: 0.75rem;
+}
+
+.matrix-row {
+    padding: 0.625rem 0;
+    border-top: 1px solid var(--pos-border);
+}
+
+.matrix-color {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.cell-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(6.25rem, 1fr));
+    gap: 0.5rem;
+}
+
+.cell {
+    padding: 0.5rem;
+    border: 1.5px dashed var(--pos-brand);
+    border-radius: 0.625rem;
+    background: var(--pos-brand-soft);
+}
+
+.cell_existing {
+    border-style: solid;
+    border-color: var(--pos-border);
+    background: var(--pos-surface);
+}
+
+.cell-size {
+    font-weight: 700;
+}
+
+.cell-stock {
+    margin-bottom: 0.25rem;
+    font-size: 0.6875rem;
+    color: var(--pos-weak);
+}
+
+.save-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.5rem;
+    margin: 0 -0.75rem;
+    padding: 0.625rem 0.75rem calc(0.625rem + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--pos-border);
+    background: var(--pos-surface);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.label-list {
+    margin-top: 0.5rem;
+}
+
+/* ---------- header ---------- */
+
+.head-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+/* ---------- per-variant barcode panel ---------- */
+
+.variant-item {
+    border-bottom: 1px solid var(--pos-border);
+}
+
+.variant-item:last-child {
+    border-bottom: 0;
+}
+
+.variant-item > .variant {
+    border-bottom: 0;
+}
+
+.icon-btn_small {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.5rem;
+}
+
+.icon-btn_missing {
+    border-style: dashed;
+}
+
+.barcode-panel {
+    margin: 0 0 0.75rem;
+    padding: 0.875rem;
+    border-radius: 0.625rem;
+    background: var(--pos-bg);
+}
+
+.copies-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.625rem;
+}
+
+.stepper {
+    display: inline-flex;
+    overflow: hidden;
+    border: 1px solid var(--pos-border);
+    border-radius: 0.625rem;
+    background: var(--pos-surface);
+}
+
+.step-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--pos-tap);
+    height: var(--pos-tap);
+    border: 0;
+    background: var(--pos-surface);
+    cursor: pointer;
+}
+
+.step-btn:active {
+    background: var(--pos-brand-soft);
+}
+
+.qty-input {
+    width: 3.5rem;
+    border: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: center;
+    -moz-appearance: textfield;
+}
+
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+}
+
+.panel-print {
+    margin-top: 0.75rem;
+}
+
+.change-code {
+    margin-top: 0.75rem;
+}
+
+.change-code summary {
+    min-height: 2rem;
+    color: var(--pos-brand);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.missing-box {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: 0.625rem;
+    background: var(--pos-error-soft);
+}
+
+.manual-print {
+    display: block;
+    margin-top: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    border: 1px dashed var(--pos-brand);
+    border-radius: var(--pos-radius);
+    color: var(--pos-brand);
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+}
+
+@media (min-width: 768px) {
+    .form-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .form-grid_3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .span-2 {
+        grid-column: span 2;
+    }
+
+    .editor,
+    .save-bar {
+        max-width: 56rem;
+    }
+}

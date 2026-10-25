@@ -1,0 +1,422 @@
+<template>
+    <div class={rootClass}>
+        <template lwc:if={loading}>
+            <div class="loading">
+                <lightning-spinner alternative-text="Loading products" size="medium"></lightning-spinner>
+            </div>
+        </template>
+        <template lwc:elseif={loadError}>
+            <div class="panel">
+                <p class="warn">{loadError}</p>
+                <button class="secondary-btn retry" onclick={load}>Try again</button>
+            </div>
+        </template>
+        <template lwc:elseif={returnMode}>
+            <c-pos-return initial-query={returnQuery} onclose={handleReturnClose}
+                onexchange={handleExchange}></c-pos-return>
+        </template>
+        <template lwc:else>
+            <!-- Exchange in progress -->
+            <template lwc:if={exchangeNote}>
+                <div class="exchange-banner" role="status">
+                    <lightning-icon icon-name="utility:sync" size="small" class="exchange-icon"></lightning-icon>
+                    <span class="exchange-text">{exchangeText}</span>
+                </div>
+            </template>
+
+            <!-- Saved-bill banner -->
+            <template lwc:if={lastBill}>
+                <div class="success-banner" role="status">
+                    <lightning-icon icon-name="utility:success" size="small" class="success-icon"></lightning-icon>
+                    <div class="success-text">
+                        <div class="success-title">{lastBill.no} saved</div>
+                        <div class="success-sub">{lastBillSub}</div>
+                    </div>
+                    <button class="icon-btn" title="Print receipt" aria-label="Print receipt" onclick={handlePrintLast}>
+                        <lightning-icon icon-name="utility:print" size="x-small"></lightning-icon>
+                    </button>
+                    <button class="icon-btn" title="Send on WhatsApp" aria-label="Send bill on WhatsApp" onclick={handleShareLast}>
+                        <lightning-icon icon-name="utility:share" size="x-small"></lightning-icon>
+                    </button>
+                    <button class="icon-btn icon-btn_ghost" title="Dismiss" aria-label="Dismiss" onclick={handleDismissLast}>
+                        <lightning-icon icon-name="utility:close" size="x-small"></lightning-icon>
+                    </button>
+                </div>
+                <template lwc:if={manualPrintUrl}>
+                    <a class="manual-print" href={manualPrintUrl}>Receipt didn't print? Tap here to send it to the printer</a>
+                </template>
+            </template>
+
+            <div class="billing-grid">
+                <!-- ============ CART COLUMN ============ -->
+                <section class="col-cart" aria-label="Items">
+                    <div class="panel">
+                        <div class="search-row">
+                            <div class="search-input">
+                                <lightning-input data-id="search" type="search" variant="label-hidden"
+                                    label="Scan barcode or search product" placeholder={searchPlaceholder}
+                                    value={searchTerm} onchange={handleSearchChange}
+                                    onkeyup={handleSearchKeyUp}></lightning-input>
+                            </div>
+                            <template lwc:if={canScan}>
+                                <button class="icon-btn icon-btn_brand" title="Scan barcode" aria-label="Scan barcode with camera"
+                                    onclick={handleScan}>
+                                    <lightning-icon icon-name="utility:scan" size="small"></lightning-icon>
+                                </button>
+                            </template>
+                            <button class={browseBtnClass} title="Browse products" aria-label="Browse products"
+                                aria-pressed={browsePressed} onclick={toggleBrowse}>
+                                <lightning-icon icon-name="utility:apps" size="small"></lightning-icon>
+                            </button>
+                        </div>
+                        <button class="return-btn" onclick={handleOpenReturn}>
+                            <lightning-icon icon-name="utility:undo" size="x-small" class="return-icon"></lightning-icon>
+                            Return / Exchange
+                        </button>
+
+                        <template lwc:if={hasSuggestions}>
+                            <ul class="suggestions" role="listbox" aria-label="Matching products">
+                                <template for:each={suggestions} for:item="s">
+                                    <li key={s.Id} role="option" aria-selected="false" class="suggestion" data-id={s.Id}
+                                        onclick={handleSuggestionClick}>
+                                        <span class="swatch" style={s.swatch}></span>
+                                        <div class="suggestion-main">
+                                            <div class="name">{s.Name}</div>
+                                            <div class="meta">{s.meta}</div>
+                                        </div>
+                                        <div class="suggestion-side">
+                                            <div class="name">{s.priceText}</div>
+                                            <div class={s.stockClass}>{s.stockText}</div>
+                                        </div>
+                                    </li>
+                                </template>
+                            </ul>
+                        </template>
+
+                        <template lwc:if={showBrowse}>
+                            <div class="browse">
+                                <template lwc:if={selectedStyle}>
+                                    <div class="variant-head">
+                                        <button class="icon-btn icon-btn_ghost" aria-label="Back to products" title="Back"
+                                            onclick={handleBrowseBack}>
+                                            <lightning-icon icon-name="utility:back" size="x-small"></lightning-icon>
+                                        </button>
+                                        <div>
+                                            <div class="name">{selectedStyle.name}</div>
+                                            <div class="meta">{selectedStyleMeta}</div>
+                                        </div>
+                                    </div>
+                                    <template lwc:if={hasColorChoice}>
+                                        <div class="label">Color</div>
+                                        <div class="chips">
+                                            <template for:each={colorChips} for:item="c">
+                                                <button key={c.name} class={c.cls} data-name={c.name} aria-pressed={c.pressed}
+                                                    onclick={handleColorSelect}>
+                                                    <span class="swatch" style={c.swatch}></span>{c.name}
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <div class="label">Tap a size to add</div>
+                                    <div class="size-grid">
+                                        <template for:each={sizeButtons} for:item="z">
+                                            <button key={z.id} class={z.cls} data-id={z.id} onclick={handleSizeAdd}>
+                                                <span class="size">{z.size}</span>
+                                                <span class="size-stock">{z.stockText}</span>
+                                                <template lwc:if={z.inCart}>
+                                                    <span class="size-badge" aria-label="In cart">{z.inCart}</span>
+                                                </template>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template lwc:else>
+                                    <div class="chips chips_scroll category-row">
+                                        <template for:each={categoryChips} for:item="c">
+                                            <button key={c.name} class={c.cls} data-name={c.name} aria-pressed={c.pressed}
+                                                onclick={handleCategory}>{c.name}</button>
+                                        </template>
+                                    </div>
+                                    <template lwc:if={hasStyles}>
+                                        <div class="tile-grid">
+                                            <template for:each={styleTiles} for:item="t">
+                                                <button key={t.key} class={t.cls} data-key={t.key} onclick={handleStyleSelect}>
+                                                    <span class="tile-name">{t.name}</span>
+                                                    <span class="tile-brand">{t.brand}</span>
+                                                    <span class="tile-swatches">
+                                                        <template for:each={t.swatches} for:item="w">
+                                                            <span key={w.name} class="swatch" style={w.style} title={w.name}></span>
+                                                        </template>
+                                                    </span>
+                                                    <span class="tile-foot">
+                                                        <span class="tile-price">{t.priceText}</span>
+                                                        <span class="tile-stock">{t.stockText}</span>
+                                                    </span>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template lwc:else>
+                                        <p class="meta browse-empty">No active products yet. Add them in the POS Products tab.</p>
+                                    </template>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-head">
+                            <h2 class="panel-title">
+                                Cart
+                                <template lwc:if={hasCart}><span class="count">{itemCount}</span></template>
+                            </h2>
+                            <template lwc:if={hasCart}>
+                                <button class="link-btn" onclick={handleClear}>Clear</button>
+                            </template>
+                        </div>
+
+                        <template lwc:if={hasCart}>
+                            <ul class="lines">
+                                <template for:each={rows} for:item="r">
+                                    <li key={r.id} class="line">
+                                        <div class="line-top">
+                                            <span class="swatch line-swatch" style={r.swatch}></span>
+                                            <div class="line-info">
+                                                <div class="name">{r.name}</div>
+                                                <div class="meta">{r.meta}</div>
+                                                <div class="meta">{r.priceText} each · GST {r.rate}%</div>
+                                                <template lwc:if={r.stockWarning}>
+                                                    <div class="warn">{r.stockWarning}</div>
+                                                </template>
+                                            </div>
+                                            <div class="line-amount">
+                                                <div class="amount">{r.netText}</div>
+                                                <template lwc:if={r.hasDiscount}>
+                                                    <div class="was">{r.grossText}</div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        <div class="line-controls">
+                                            <div class="stepper">
+                                                <button class="step-btn" aria-label={r.decLabel} title={r.decLabel}
+                                                    data-id={r.id} onclick={handleDec}>
+                                                    <lightning-icon icon-name={r.decIcon} size="x-small"></lightning-icon>
+                                                </button>
+                                                <input class="qty-input" type="number" inputmode="numeric" min="1"
+                                                    aria-label="Quantity" value={r.q} data-id={r.id}
+                                                    onchange={handleQtyInput} />
+                                                <button class="step-btn" aria-label="Increase quantity" title="Increase quantity"
+                                                    data-id={r.id} onclick={handleInc}>
+                                                    <lightning-icon icon-name="utility:add" size="x-small"></lightning-icon>
+                                                </button>
+                                            </div>
+                                            <button class={r.discountBtnClass} data-id={r.id} aria-expanded={r.expanded}
+                                                onclick={handleToggleDiscount}>
+                                                <lightning-icon icon-name="utility:percent" size="xx-small" class="chip-icon"></lightning-icon>
+                                                {r.discountLabel}
+                                            </button>
+                                        </div>
+                                        <template lwc:if={r.editing}>
+                                            <div class="discount-editor">
+                                                <div class="chips">
+                                                    <template for:each={r.presets} for:item="p">
+                                                        <button key={p.value} class={p.cls} data-id={r.id} data-value={p.value}
+                                                            onclick={handlePresetDiscount}>{p.label}</button>
+                                                    </template>
+                                                </div>
+                                                <lightning-input class="custom-discount" type="number" label="Custom discount %"
+                                                    min="0" max="100" step="0.01" value={r.dp} data-id={r.id}
+                                                    onchange={handleDiscountChange}></lightning-input>
+                                            </div>
+                                        </template>
+                                    </li>
+                                </template>
+                            </ul>
+                        </template>
+                        <template lwc:else>
+                            <div class="empty">
+                                <lightning-icon icon-name="utility:cart" size="medium"></lightning-icon>
+                                <p class="empty-title">Cart is empty</p>
+                                <p class="empty-sub">{emptyHint}</p>
+                            </div>
+                        </template>
+                    </div>
+                </section>
+
+                <!-- ============ CHECKOUT COLUMN ============ -->
+                <section class="col-checkout" aria-label="Checkout">
+                    <button class="back-btn" onclick={handleBackToCart}>
+                        <lightning-icon icon-name="utility:back" size="x-small"></lightning-icon>
+                        <span>Back to cart · {itemCountText}</span>
+                    </button>
+
+                    <div class="panel">
+                        <h2 class="panel-title">Customer</h2>
+                        <template lwc:if={customer}>
+                            <div class="customer-chip">
+                                <span class="avatar">{customerInitials}</span>
+                                <div class="customer-info">
+                                    <div class="name">{customerDisplayName}</div>
+                                    <div class="meta">{mobile}</div>
+                                    <div class="meta">{customerSummary}</div>
+                                    <template lwc:if={customerHasDue}>
+                                        <span class="badge-due">Credit due {customerDueText}</span>
+                                    </template>
+                                </div>
+                                <button class="link-btn" onclick={handleClearCustomer}>Change</button>
+                            </div>
+                            <template lwc:if={customerNeedsName}>
+                                <lightning-input class="field-gap" label="Customer name" value={customerName} maxlength="80"
+                                    onchange={handleCustomerNameChange}></lightning-input>
+                            </template>
+                        </template>
+                        <template lwc:else>
+                            <lightning-input type="tel" label="Mobile number" placeholder="10-digit mobile (optional)"
+                                value={mobile} maxlength="10" onchange={handleMobileChange}></lightning-input>
+                            <template lwc:if={lookingUp}>
+                                <p class="meta field-gap">Looking up customer…</p>
+                            </template>
+                            <template lwc:if={isNewCustomer}>
+                                <lightning-input class="field-gap" label="Customer name (new customer)" value={customerName}
+                                    maxlength="80" onchange={handleCustomerNameChange}></lightning-input>
+                            </template>
+                        </template>
+                    </div>
+
+                    <div class="panel">
+                        <h2 class="panel-title">Summary</h2>
+                        <div class="sum-row"><span>Items</span><span>{itemCount}</span></div>
+                        <div class="sum-row"><span>Gross</span><span>{grossText}</span></div>
+                        <template lwc:if={hasDiscount}>
+                            <div class="sum-row sum-row_save"><span>Discount</span><span>−{discountText}</span></div>
+                        </template>
+                        <div class="sum-row"><span>GST (included)</span><span>{taxText}</span></div>
+                        <template lwc:if={hasRoundOff}>
+                            <div class="sum-row"><span>Round off</span><span>{roundOffText}</span></div>
+                        </template>
+                        <template lwc:if={billDiscountOpen}>
+                            <lightning-input class="field-gap" type="number" label="Bill discount (₹)" min="0" step="1"
+                                value={billDiscount} onchange={handleBillDiscountChange}></lightning-input>
+                        </template>
+                        <template lwc:else>
+                            <button class="link-btn link-btn_flush" onclick={handleShowBillDiscount}>+ Add bill discount</button>
+                        </template>
+                        <div class="grand-row">
+                            <span>Total</span>
+                            <span class="grand">{grandText}</span>
+                        </div>
+                        <template lwc:if={hasCreditNote}>
+                            <div class="note-row">
+                                <span class="note-label">
+                                    <lightning-icon icon-name="utility:note" size="x-small" class="note-icon"></lightning-icon>
+                                    Credit note {creditNote.no}
+                                </span>
+                                <span class="note-amount">{cnAppliedText}</span>
+                                <button class="icon-btn icon-btn_ghost note-remove" aria-label="Remove credit note"
+                                    title="Remove credit note" onclick={handleRemoveNote}>
+                                    <lightning-icon icon-name="utility:close" size="xx-small"></lightning-icon>
+                                </button>
+                            </div>
+                            <template lwc:if={cnLeftText}><p class="meta">{cnLeftText}</p></template>
+                            <div class="grand-row grand-row_pay">
+                                <span>To pay</span>
+                                <span class="grand">{payableText}</span>
+                            </div>
+                        </template>
+                        <template lwc:else>
+                            <template lwc:if={showNoteInput}>
+                                <div class="note-input">
+                                    <lightning-input variant="label-hidden" label="Credit note number" value={noteDraft}
+                                        placeholder="Scan or type CN-000001" onchange={handleNoteDraft}
+                                        onkeyup={handleNoteKey}></lightning-input>
+                                    <button class="secondary-btn" disabled={noteApplyDisabled} onclick={handleApplyNote}>Apply</button>
+                                </div>
+                            </template>
+                            <template lwc:else>
+                                <button class="link-btn link-btn_flush" onclick={handleShowNoteInput}>+ Use a credit note</button>
+                            </template>
+                        </template>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-head">
+                            <h2 class="panel-title">Payment</h2>
+                            <button class="link-btn" onclick={toggleSplit}>{splitLabel}</button>
+                        </div>
+
+                        <template lwc:if={splitMode}>
+                            <template for:each={paymentRows} for:item="p">
+                                <div key={p.key} class="split-row">
+                                    <lightning-combobox class="split-mode" variant="label-hidden" label="Payment mode"
+                                        options={payModeOptions} value={p.m} data-key={p.key}
+                                        onchange={handlePayModeChange}></lightning-combobox>
+                                    <lightning-input class="split-amount" type="number" variant="label-hidden" label="Amount"
+                                        min="0" step="0.01" value={p.a} data-key={p.key}
+                                        onchange={handlePayAmountChange}></lightning-input>
+                                    <template lwc:if={canRemovePayment}>
+                                        <button class="icon-btn icon-btn_ghost" aria-label="Remove payment" title="Remove payment"
+                                            data-key={p.key} onclick={handleRemovePayment}>
+                                            <lightning-icon icon-name="utility:close" size="x-small"></lightning-icon>
+                                        </button>
+                                    </template>
+                                </div>
+                            </template>
+                            <button class="link-btn link-btn_flush" onclick={handleAddPayment}>+ Add another payment</button>
+                        </template>
+                        <template lwc:else>
+                            <div class="pay-grid" role="group" aria-label="Payment mode">
+                                <template for:each={payTiles} for:item="t">
+                                    <button key={t.mode} class={t.cls} data-mode={t.mode} aria-pressed={t.pressed}
+                                        onclick={handlePayMode}>
+                                        <lightning-icon icon-name={t.icon} size="small" class="pay-icon"></lightning-icon>
+                                        <span>{t.label}</span>
+                                    </button>
+                                </template>
+                            </div>
+                            <template lwc:if={isCashSingle}>
+                                <div class="label">Cash received</div>
+                                <div class="chips">
+                                    <template for:each={tenderChips} for:item="c">
+                                        <button key={c.value} class={c.cls} data-value={c.value}
+                                            onclick={handleTender}>{c.label}</button>
+                                    </template>
+                                </div>
+                                <lightning-input class="field-gap" type="number" label="Other amount" min="0" step="1"
+                                    value={cashReceived} onchange={handleCashReceived}></lightning-input>
+                            </template>
+                        </template>
+
+                        <div class={balanceClass}>{balanceText}</div>
+                        <template lwc:if={paymentProblem}>
+                            <p class="warn">{paymentProblem}</p>
+                        </template>
+
+                        <lightning-input class="field-gap" type="checkbox" label={printLabel}
+                            checked={printAfterSave} onchange={handlePrintToggle}></lightning-input>
+
+                        <div class="desktop-save">
+                            <button class="primary-btn" disabled={saveDisabled} onclick={handleSave}>{saveLabel}</button>
+                            <template lwc:if={isDesktop}>
+                                <p class="meta shortcut-hint">Shortcuts: F2 search · F9 save bill</p>
+                            </template>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- ============ PHONE BOTTOM BAR ============ -->
+            <div class="mobile-bar">
+                <template lwc:if={isCheckoutView}>
+                    <button class="primary-btn" disabled={saveDisabled} onclick={handleSave}>{saveLabel}</button>
+                </template>
+                <template lwc:else>
+                    <div class={barClass}>
+                        <div class="meta">{itemCountText}</div>
+                        <div class="bar-total">{barTotalText}</div>
+                    </div>
+                    <button class="primary-btn bar-btn" disabled={checkoutDisabled} onclick={handleCheckout}>Checkout</button>
+                </template>
+            </div>
+        </template>
+    </div>
+</template>

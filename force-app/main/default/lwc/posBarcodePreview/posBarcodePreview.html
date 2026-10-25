@@ -1,0 +1,24 @@
+<template>
+    <div class={paperClass}>
+        <template lwc:if={shop}><div class="shop">{shop}</div></template>
+        <template lwc:if={line1}><div class="title">{line1}</div></template>
+        <template lwc:if={line2}><div class="sub">{line2}</div></template>
+        <template lwc:if={ok}>
+            <svg class="bars" style={svgStyle} viewBox={viewBox} preserveAspectRatio="none" role="img"
+                aria-label={ariaLabel}>
+                <template for:each={bars} for:item="b">
+                    <rect key={b.key} x={b.x} y="0" width={b.width} height="40"></rect>
+                </template>
+            </svg>
+            <div class="digits">{digits}</div>
+        </template>
+        <template lwc:else>
+            <div class="error">{error}</div>
+        </template>
+        <template lwc:if={hasMrp}><div class="sub">{mrpText}</div></template>
+        <template lwc:if={hasPrice}><div class="price">{priceText}</div></template>
+    </div>
+    <template lwc:if={ok}>
+        <p class="type">{typeText}</p>
+    </template>
+</template>

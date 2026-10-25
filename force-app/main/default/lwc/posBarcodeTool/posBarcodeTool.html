@@ -1,0 +1,86 @@
+<template>
+    <div class="tool">
+        <div class="tool-head">
+            <button class="icon-btn icon-btn_ghost" aria-label="Back to products" title="Back" onclick={handleBack}>
+                <lightning-icon icon-name="utility:back" size="x-small"></lightning-icon>
+            </button>
+            <div>
+                <h2 class="panel-title tool-title">Barcode tool</h2>
+                <p class="meta">Print any code as a label, for tags you stick on items.</p>
+            </div>
+        </div>
+
+        <div class="layout">
+            <div class="panel">
+                <div class="label first-label">Barcode value</div>
+                <div class="value-row">
+                    <lightning-input class="value-input" variant="label-hidden" label="Barcode value" value={value}
+                        maxlength="40" placeholder="e.g. SHIRT-042 or 8901234567890" onchange={handleValue}></lightning-input>
+                    <button class="secondary-btn" onclick={handleGenerate}>
+                        <lightning-icon icon-name="utility:refresh" size="x-small"></lightning-icon>Generate
+                    </button>
+                </div>
+                <template lwc:if={showError}>
+                    <p class="warn hint">{errorText}</p>
+                </template>
+                <p class="meta hint">{valueHint}</p>
+
+                <div class="label">Text on label (optional)</div>
+                <div class="form-grid">
+                    <lightning-input label="Line 1" value={line1} maxlength="40" placeholder="e.g. Cotton Kurta"
+                        onchange={handleLine1}></lightning-input>
+                    <lightning-input label="Line 2" value={line2} maxlength="40" placeholder="e.g. Size L / Maroon"
+                        onchange={handleLine2}></lightning-input>
+                    <lightning-input type="number" label="Price (₹)" value={price} min="0" step="0.01"
+                        onchange={handlePrice}></lightning-input>
+                </div>
+                <lightning-input class="toggle" type="toggle" label="Print shop name on top" checked={showShop}
+                    message-toggle-active="" message-toggle-inactive="" onchange={handleShowShop}></lightning-input>
+
+                <div class="label">Copies</div>
+                <div class="copies-row">
+                    <div class="stepper">
+                        <button class="step-btn" aria-label="One copy less" data-delta="-1" onclick={handleCopyStep}>
+                            <lightning-icon icon-name="utility:dash" size="x-small"></lightning-icon>
+                        </button>
+                        <input class="qty-input" type="number" inputmode="numeric" min="1" max="200" aria-label="Copies"
+                            value={copies} onchange={handleCopiesInput} />
+                        <button class="step-btn" aria-label="One copy more" data-delta="1" onclick={handleCopyStep}>
+                            <lightning-icon icon-name="utility:add" size="x-small"></lightning-icon>
+                        </button>
+                    </div>
+                    <div class="chips">
+                        <template for:each={copyChips} for:item="c">
+                            <button key={c.value} class={c.cls} data-value={c.value} onclick={handleCopyChip}>{c.label}</button>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel preview-panel">
+                <div class="label first-label">Preview ({paperWidth} mm)</div>
+                <template lwc:if={hasValue}>
+                    <c-pos-barcode-preview value={value} paper-width={paperWidth} shop={shopName} line1={line1}
+                        line2={line2} price={price}></c-pos-barcode-preview>
+                </template>
+                <template lwc:else>
+                    <div class="empty">
+                        <lightning-icon icon-name="utility:scan" size="medium"></lightning-icon>
+                        <p class="empty-sub">Your label appears here.</p>
+                    </div>
+                </template>
+                <template lwc:if={needsBluetooth}>
+                    <p class="meta hint">Labels print on the Bluetooth thermal printer. Set it up in Settings.</p>
+                </template>
+                <template lwc:if={manualUrl}>
+                    <a class="manual-print" href={manualUrl}>Nothing printed? Tap here</a>
+                </template>
+            </div>
+        </div>
+
+        <div class="save-bar">
+            <button class="secondary-btn" onclick={handleBack}>Done</button>
+            <button class="primary-btn" disabled={printDisabled} onclick={handlePrint}>{printLabel}</button>
+        </div>
+    </div>
+</template>

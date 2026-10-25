@@ -1,0 +1,73 @@
+<template>
+    <div class="panel">
+        <div class="panel-head">
+            <div>
+                <h2 class="panel-title">Customers</h2>
+                <p class="meta">{countText}</p>
+            </div>
+            <button class="icon-btn icon-btn_ghost" title="Refresh" aria-label="Refresh customers" onclick={load}>
+                <lightning-icon icon-name="utility:refresh" size="x-small"></lightning-icon>
+            </button>
+        </div>
+        <lightning-input type="search" variant="label-hidden" label="Search customers" placeholder="Search mobile or name"
+            onchange={handleSearchChange}></lightning-input>
+        <div class="chips chips_scroll filters">
+            <template for:each={filterChips} for:item="f">
+                <button key={f.name} class={f.cls} data-name={f.name} aria-pressed={f.pressed}
+                    onclick={handleFilter}>{f.label}</button>
+            </template>
+        </div>
+        <template lwc:if={error}>
+            <p class="error-text">{error}</p>
+        </template>
+    </div>
+
+    <div class="list-holder">
+        <template lwc:if={loading}>
+            <lightning-spinner alternative-text="Loading customers" size="small"></lightning-spinner>
+        </template>
+
+        <template lwc:if={hasCustomers}>
+            <template lwc:if={useCards}>
+                <ul class="card-list">
+                    <template for:each={visibleCustomers} for:item="c">
+                        <li key={c.m} class="card-item customer">
+                            <span class="avatar">{c.initials}</span>
+                            <div class="customer-info">
+                                <div class="name">{c.displayName}</div>
+                                <div class="meta">{c.m} · last visit {c.l}</div>
+                                <div class="meta">{c.stats}</div>
+                                <template lwc:if={c.hasDue}>
+                                    <span class="badge-due">Credit due {c.dueText}</span>
+                                </template>
+                            </div>
+                            <div class="customer-actions">
+                                <a class="icon-btn" href={c.telUrl} title="Call" aria-label="Call customer">
+                                    <lightning-icon icon-name="utility:call" size="x-small"></lightning-icon>
+                                </a>
+                                <button class="icon-btn" title="WhatsApp" aria-label="Message on WhatsApp" data-mobile={c.m}
+                                    data-name={c.n} onclick={handleChat}>
+                                    <lightning-icon icon-name="utility:chat" size="x-small"></lightning-icon>
+                                </button>
+                            </div>
+                        </li>
+                    </template>
+                </ul>
+            </template>
+            <template lwc:else>
+                <div class="panel table-panel">
+                    <lightning-datatable key-field="m" data={visibleCustomers} columns={columns} hide-checkbox-column
+                        sorted-by={sortedBy} sorted-direction={sortedDirection} onsort={handleSort}
+                        onrowaction={handleRowAction}></lightning-datatable>
+                </div>
+            </template>
+        </template>
+        <template lwc:else>
+            <div class="panel empty">
+                <lightning-icon icon-name="utility:groups" size="medium"></lightning-icon>
+                <p class="empty-title">No customers found</p>
+                <p class="empty-sub">Customers are saved automatically when a bill has a mobile number.</p>
+            </div>
+        </template>
+    </div>
+</template>

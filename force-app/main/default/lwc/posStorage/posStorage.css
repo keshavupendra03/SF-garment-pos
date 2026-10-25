@@ -1,0 +1,49 @@
+@import 'c/posStyles';
+
+.holder {
+    position: relative;
+    min-height: 8rem;
+}
+
+.meter-block {
+    margin-top: 1rem;
+}
+
+.meter-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.375rem;
+}
+
+.meter-value {
+    font-size: 1.25rem;
+    font-weight: 800;
+}
+
+.meter {
+    overflow: hidden;
+    height: 0.75rem;
+    margin-bottom: 0.375rem;
+    border-radius: 999px;
+    background: var(--pos-bg);
+}
+
+.meter-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--pos-brand);
+    transition: width 0.4s ease;
+}
+
+.meter-fill_warn {
+    background: #dd7a01;
+}
+
+.meter-fill_danger {
+    background: var(--pos-error);
+}
+
+.note {
+    margin-top: 1.25rem;
+}

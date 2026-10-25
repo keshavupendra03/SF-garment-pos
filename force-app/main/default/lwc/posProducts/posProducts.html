@@ -1,0 +1,390 @@
+<template>
+    <div class="products-top"></div>
+
+    <!-- ================= LIST ================= -->
+    <template lwc:if={isList}>
+        <div class="panel">
+            <div class="panel-head">
+                <div class="head-text">
+                    <h2 class="panel-title">Products</h2>
+                    <p class="meta">{summaryText}</p>
+                </div>
+                <div class="head-actions">
+                    <button class="secondary-btn" title="Print any value as a barcode" onclick={handleOpenTool}>
+                        <lightning-icon icon-name="utility:scan" size="x-small"></lightning-icon>
+                        Barcode tool
+                    </button>
+                    <button class="primary-btn new-btn" onclick={handleNew}>
+                        <lightning-icon icon-name="utility:add" size="x-small" class="btn-icon"></lightning-icon>
+                        New style
+                    </button>
+                </div>
+            </div>
+            <lightning-input type="search" variant="label-hidden" label="Search products"
+                placeholder="Search name, brand, SKU, barcode or color" onchange={handleSearch}></lightning-input>
+            <div class="chips chips_scroll filter-row">
+                <template for:each={filterChips} for:item="f">
+                    <button key={f.name} class={f.cls} data-name={f.name} aria-pressed={f.pressed}
+                        onclick={handleStockFilter}>{f.label}</button>
+                </template>
+            </div>
+            <div class="chips chips_scroll filter-row">
+                <template for:each={categoryChips} for:item="c">
+                    <button key={c.name} class={c.cls} data-name={c.name} aria-pressed={c.pressed}
+                        onclick={handleCategory}>{c.name}</button>
+                </template>
+            </div>
+            <template lwc:if={error}>
+                <p class="error-text">{error}</p>
+            </template>
+        </div>
+
+        <div class="list-holder">
+            <template lwc:if={loading}>
+                <lightning-spinner alternative-text="Loading products" size="small"></lightning-spinner>
+            </template>
+            <template lwc:if={hasStyles}>
+                <ul class="card-list">
+                    <template for:each={styleCards} for:item="s">
+                        <li key={s.key} class={s.cardCls}>
+                            <button class="style-head" data-key={s.key} aria-expanded={s.openAttr} onclick={handleToggle}>
+                                <span class="style-main">
+                                    <span class="name">{s.name}</span>
+                                    <span class="meta">{s.sub}</span>
+                                    <span class="style-badges">
+                                        <span class="swatches">
+                                            <template for:each={s.swatches} for:item="w">
+                                                <span key={w.name} class="swatch" style={w.style} title={w.name}></span>
+                                            </template>
+                                        </span>
+                                        <span class="meta">{s.stockText}</span>
+                                        <template lwc:if={s.hasLow}><span class="pill pill_low">{s.lowText}</span></template>
+                                        <template lwc:if={s.hasOut}><span class="pill pill_out">{s.outText}</span></template>
+                                        <template lwc:if={s.allInactive}><span class="pill">Hidden</span></template>
+                                    </span>
+                                </span>
+                                <span class="style-side">
+                                    <span class="name">{s.priceText}</span>
+                                    <lightning-icon icon-name={s.chevron} size="x-small"></lightning-icon>
+                                </span>
+                            </button>
+
+                            <template lwc:if={s.isOpen}>
+                                <div class="style-body">
+                                    <ul class="variants">
+                                        <template for:each={s.variants} for:item="v">
+                                            <li key={v.id} class="variant-item">
+                                            <div class={v.rowCls}>
+                                                <span class="swatch" style={v.swatch}></span>
+                                                <div class="variant-info">
+                                                    <div class="name">{v.label}</div>
+                                                    <div class="meta codes">{v.codes}</div>
+                                                </div>
+                                                <div class="variant-controls">
+                                                    <button class={v.barcodeBtnCls} data-id={v.id} title={v.barcodeBtnTitle}
+                                                        aria-label={v.barcodeBtnTitle} aria-expanded={v.barcodeExpanded}
+                                                        onclick={handleOpenBarcode}>
+                                                        <lightning-icon icon-name="utility:scan" size="xx-small"></lightning-icon>
+                                                    </button>
+                                                    <div class="mini-stepper">
+                                                        <button class="mini-step" aria-label="Remove one from stock" title="Stock −1"
+                                                            data-id={v.id} data-delta="-1" onclick={handleStockStep}>
+                                                            <lightning-icon icon-name="utility:dash" size="xx-small"></lightning-icon>
+                                                        </button>
+                                                        <span class={v.stockCls} aria-label="Stock">{v.stock}</span>
+                                                        <button class="mini-step" aria-label="Add one to stock" title="Stock +1"
+                                                            data-id={v.id} data-delta="1" onclick={handleStockStep}>
+                                                            <lightning-icon icon-name="utility:add" size="xx-small"></lightning-icon>
+                                                        </button>
+                                                    </div>
+                                                    <button class={v.activeCls} data-id={v.id} title={v.activeTitle}
+                                                        onclick={handleToggleActive}>{v.activeLabel}</button>
+                                                </div>
+                                            </div>
+
+                                            <template lwc:if={v.barcodeOpen}>
+                                                <div class="barcode-panel">
+                                                    <template lwc:if={v.hasBarcode}>
+                                                        <c-pos-barcode-preview value={v.barcode} paper-width={paperWidth}
+                                                            shop={shopName} line1={v.name} line2={v.label} price={v.price}
+                                                            mrp={v.mrp}></c-pos-barcode-preview>
+                                                        <div class="label">Copies</div>
+                                                        <div class="copies-row">
+                                                            <div class="stepper">
+                                                                <button class="step-btn" aria-label="One copy less" data-delta="-1"
+                                                                    onclick={handleVariantCopyStep}>
+                                                                    <lightning-icon icon-name="utility:dash" size="x-small"></lightning-icon>
+                                                                </button>
+                                                                <input class="qty-input" type="number" inputmode="numeric" min="1"
+                                                                    max="200" aria-label="Copies" value={variantCopies}
+                                                                    onchange={handleVariantCopiesInput} />
+                                                                <button class="step-btn" aria-label="One copy more" data-delta="1"
+                                                                    onclick={handleVariantCopyStep}>
+                                                                    <lightning-icon icon-name="utility:add" size="x-small"></lightning-icon>
+                                                                </button>
+                                                            </div>
+                                                            <div class="chips">
+                                                                <template for:each={variantCopyChips} for:item="c">
+                                                                    <button key={c.value} class={c.cls} data-value={c.value}
+                                                                        onclick={handleVariantCopyChip}>{c.label}</button>
+                                                                </template>
+                                                            </div>
+                                                        </div>
+                                                        <button class="primary-btn panel-print" data-id={v.id}
+                                                            onclick={handlePrintVariant}>{variantPrintLabel}</button>
+                                                        <template lwc:if={manualVariantUrl}>
+                                                            <a class="manual-print" href={manualVariantUrl}>Nothing printed? Tap here</a>
+                                                        </template>
+                                                        <details class="change-code">
+                                                            <summary>Use a different barcode</summary>
+                                                            <div class="add-row">
+                                                                <lightning-input variant="label-hidden" label="New barcode"
+                                                                    placeholder="Scan or type the code" value={barcodeDraft}
+                                                                    maxlength="40" onchange={handleBarcodeDraft}></lightning-input>
+                                                                <button class="secondary-btn" data-id={v.id}
+                                                                    disabled={barcodeSaveDisabled} onclick={handleSaveBarcode}>Save</button>
+                                                            </div>
+                                                        </details>
+                                                    </template>
+                                                    <template lwc:else>
+                                                        <p class="name">This item has no barcode yet</p>
+                                                        <p class="meta">Create one to print labels and scan this item at billing.</p>
+                                                        <button class="primary-btn panel-print" data-id={v.id} disabled={barcodeBusy}
+                                                            onclick={handleGenerateBarcode}>Create barcode</button>
+                                                        <div class="label">Or use the code already on the item</div>
+                                                        <div class="add-row">
+                                                            <lightning-input variant="label-hidden" label="Existing barcode"
+                                                                placeholder="Scan or type the code" value={barcodeDraft}
+                                                                maxlength="40" onchange={handleBarcodeDraft}></lightning-input>
+                                                            <button class="secondary-btn" data-id={v.id}
+                                                                disabled={barcodeSaveDisabled} onclick={handleSaveBarcode}>Save</button>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                    <div class="style-actions">
+                                        <button class="secondary-btn" data-key={s.key} onclick={handleEdit}>
+                                            <lightning-icon icon-name="utility:edit" size="x-small"></lightning-icon>Edit / add stock
+                                        </button>
+                                        <button class="secondary-btn" data-key={s.key} onclick={handleLabels}>
+                                            <lightning-icon icon-name="utility:print" size="x-small"></lightning-icon>Print labels
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                        </li>
+                    </template>
+                </ul>
+            </template>
+            <template lwc:else>
+                <div class="panel empty">
+                    <lightning-icon icon-name="utility:package" size="medium"></lightning-icon>
+                    <p class="empty-title">Nothing here</p>
+                    <p class="empty-sub">{emptyText}</p>
+                </div>
+            </template>
+        </div>
+    </template>
+
+    <!-- ================= EDITOR ================= -->
+    <template lwc:if={isEdit}>
+        <div class="editor">
+            <div class="editor-head">
+                <button class="icon-btn icon-btn_ghost" aria-label="Back to products" title="Back" onclick={handleCancel}>
+                    <lightning-icon icon-name="utility:back" size="x-small"></lightning-icon>
+                </button>
+                <h2 class="panel-title editor-title">{editorTitle}</h2>
+            </div>
+
+            <div class="panel">
+                <div class="label first-label">Details</div>
+                <div class="form-grid">
+                    <lightning-input class="span-2" label="Product name" data-field="name" value={editor.name} required
+                        maxlength="80" placeholder="e.g. Slim Fit Jeans"
+                        message-when-value-missing="Enter a product name." onchange={handleField}></lightning-input>
+                    <lightning-input label="Brand" data-field="brand" value={editor.brand} maxlength="60"
+                        onchange={handleField}></lightning-input>
+                    <lightning-input label="HSN code" data-field="hsn" value={editor.hsn} maxlength="10"
+                        placeholder="e.g. 6203" onchange={handleField}></lightning-input>
+                    <lightning-input class="span-2" label="Category" data-field="category" value={editor.category}
+                        maxlength="60" placeholder="e.g. Jeans" onchange={handleField}></lightning-input>
+                </div>
+                <div class="chips suggestion-chips">
+                    <template for:each={categorySuggestions} for:item="c">
+                        <button key={c.name} class={c.cls} data-name={c.name} onclick={handlePickCategory}>{c.name}</button>
+                    </template>
+                </div>
+
+                <div class="label">Pricing (GST inclusive)</div>
+                <div class="form-grid form-grid_3">
+                    <lightning-input type="number" label="Selling price (₹)" data-field="price" value={editor.price}
+                        required min="0.01" step="0.01" message-when-value-missing="Enter the selling price."
+                        onchange={handleField}></lightning-input>
+                    <lightning-input type="number" label="MRP (₹)" data-field="mrp" value={editor.mrp} min="0"
+                        step="0.01" onchange={handleField}></lightning-input>
+                    <lightning-input type="number" label="Cost (₹)" data-field="cost" value={editor.cost} min="0"
+                        step="0.01" onchange={handleField}></lightning-input>
+                </div>
+                <p class="meta hint">{pricingHint}</p>
+            </div>
+
+            <div class="panel">
+                <div class="label first-label">Sizes</div>
+                <div class="chips">
+                    <template for:each={sizePresets} for:item="p">
+                        <button key={p.name} class="chip chip_small chip_dashed" data-name={p.name}
+                            onclick={handlePreset}>+ {p.name}</button>
+                    </template>
+                </div>
+                <template lwc:if={hasSizes}>
+                    <div class="chips picked">
+                        <template for:each={sizeChips} for:item="s">
+                            <span key={s.name} class="picked-chip">
+                                {s.label}
+                                <button class="chip-x" aria-label="Remove size" title="Remove" data-name={s.name}
+                                    onclick={handleRemoveSize}>×</button>
+                            </span>
+                        </template>
+                    </div>
+                </template>
+                <div class="add-row">
+                    <lightning-input variant="label-hidden" label="Custom size" placeholder="Custom size, e.g. 3XL"
+                        value={editor.newSize} onchange={handleNewSize} onkeyup={handleNewSizeKey}></lightning-input>
+                    <button class="secondary-btn" onclick={handleAddSize}>Add</button>
+                </div>
+
+                <div class="label">Colors</div>
+                <template lwc:if={hasColors}>
+                    <div class="chips picked">
+                        <template for:each={colorChips} for:item="c">
+                            <span key={c.name} class="picked-chip">
+                                <span class="swatch" style={c.swatch}></span>{c.label}
+                                <button class="chip-x" aria-label="Remove color" title="Remove" data-name={c.name}
+                                    onclick={handleRemoveColor}>×</button>
+                            </span>
+                        </template>
+                    </div>
+                </template>
+                <div class="chips">
+                    <template for:each={quickColors} for:item="c">
+                        <button key={c.name} class="chip chip_small" data-name={c.name} onclick={handleQuickColor}>
+                            <span class="swatch" style={c.swatch}></span>{c.name}
+                        </button>
+                    </template>
+                </div>
+                <div class="add-row">
+                    <lightning-input variant="label-hidden" label="Custom color" placeholder="Custom color, e.g. Mustard"
+                        value={editor.newColor} onchange={handleNewColor} onkeyup={handleNewColorKey}></lightning-input>
+                    <button class="secondary-btn" onclick={handleAddColor}>Add</button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head">
+                    <div>
+                        <h2 class="panel-title">Stock by variant</h2>
+                        <p class="meta">{variantCount} variants. Existing ones: enter stock received.</p>
+                    </div>
+                </div>
+                <div class="fill-row">
+                    <lightning-input type="number" label="Opening stock for new variants" min="0" step="1"
+                        value={editor.fillOpening} onchange={handleFillOpening}></lightning-input>
+                </div>
+                <template for:each={matrix} for:item="row">
+                    <div key={row.color} class="matrix-row">
+                        <div class="matrix-color">
+                            <span class="swatch" style={row.swatch}></span>
+                            <span class="name">{row.label}</span>
+                        </div>
+                        <div class="cell-grid">
+                            <template for:each={row.cells} for:item="c">
+                                <div key={c.key} class={c.cls}>
+                                    <div class="cell-size">{c.size}</div>
+                                    <div class="cell-stock">{c.stockText}</div>
+                                    <lightning-input type="number" variant="label-hidden" label={c.inputLabel} min="0"
+                                        step="1" value={c.value} placeholder={c.placeholder} data-key={c.key}
+                                        onchange={handleCellChange}></lightning-input>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+                <template lwc:if={hasRemoved}>
+                    <p class="warn hint">{removedText}</p>
+                </template>
+            </div>
+
+            <div class="save-bar">
+                <button class="secondary-btn" onclick={handleCancel}>Cancel</button>
+                <button class="primary-btn" disabled={saving} onclick={handleSaveStyle}>{saveStyleLabel}</button>
+            </div>
+        </div>
+    </template>
+
+    <!-- ================= LABELS ================= -->
+    <template lwc:if={isLabels}>
+        <div class="editor">
+            <div class="editor-head">
+                <button class="icon-btn icon-btn_ghost" aria-label="Back to products" title="Back" onclick={handleCancel}>
+                    <lightning-icon icon-name="utility:back" size="x-small"></lightning-icon>
+                </button>
+                <div>
+                    <h2 class="panel-title editor-title">Print labels</h2>
+                    <p class="meta">{labelStyle.name}</p>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="chips">
+                    <button class="chip chip_small" onclick={handleLabelsFromStock}>One per piece in stock</button>
+                    <button class="chip chip_small" onclick={handleLabelsClear}>Clear</button>
+                </div>
+                <ul class="variants label-list">
+                    <template for:each={labelRows} for:item="r">
+                        <li key={r.id} class="variant">
+                            <span class="swatch" style={r.swatch}></span>
+                            <div class="variant-info">
+                                <div class="name">{r.label}</div>
+                                <div class="meta codes">{r.code} · stock {r.stock}</div>
+                            </div>
+                            <div class="mini-stepper">
+                                <button class="mini-step" aria-label="One label less" data-id={r.id} data-delta="-1"
+                                    onclick={handleLabelStep}>
+                                    <lightning-icon icon-name="utility:dash" size="xx-small"></lightning-icon>
+                                </button>
+                                <span class="stock-badge">{r.qty}</span>
+                                <button class="mini-step" aria-label="One label more" data-id={r.id} data-delta="1"
+                                    onclick={handleLabelStep}>
+                                    <lightning-icon icon-name="utility:add" size="xx-small"></lightning-icon>
+                                </button>
+                            </div>
+                        </li>
+                    </template>
+                </ul>
+                <template lwc:if={hasMissingBarcodes}>
+                    <div class="missing-box">
+                        <p class="warn">{missingBarcodeText}</p>
+                        <button class="secondary-btn" disabled={barcodeBusy} onclick={handleGenerateMissing}>Create missing barcodes</button>
+                    </div>
+                </template>
+                <template lwc:if={labelsNeedBluetooth}>
+                    <p class="meta hint">Labels print on the Bluetooth thermal printer (set up in Settings).</p>
+                </template>
+                <template lwc:if={manualLabelUrl}>
+                    <a class="manual-print" href={manualLabelUrl}>Nothing printed? Tap here</a>
+                </template>
+            </div>
+            <div class="save-bar">
+                <button class="secondary-btn" onclick={handleCancel}>Done</button>
+                <button class="primary-btn" disabled={labelPrintDisabled} onclick={handlePrintLabels}>{labelPrintLabel}</button>
+            </div>
+        </div>
+    </template>
+
+    <!-- ================= BARCODE TOOL ================= -->
+    <template lwc:if={isTool}>
+        <c-pos-barcode-tool onclose={handleCancel}></c-pos-barcode-tool>
+    </template>
+</template>

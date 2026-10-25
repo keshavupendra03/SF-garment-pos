@@ -1,0 +1,106 @@
+<template>
+    <c-pos-store-settings></c-pos-store-settings>
+
+    <div class="panel">
+        <div class="panel-head">
+            <h2 class="panel-title">Receipt printer</h2>
+            <span class="device-pill">
+                <lightning-icon icon-name="utility:phone_portrait" size="xx-small" class="device-icon"></lightning-icon>
+                {deviceLabel}
+            </span>
+        </div>
+        <p class="meta">These settings are saved on this device only, so each phone or computer can print its own way.</p>
+
+        <div class="label">How to print</div>
+        <div class="method-grid" role="group" aria-label="Print method">
+            <template for:each={methodTiles} for:item="m">
+                <button key={m.name} class={m.cls} data-name={m.name} aria-pressed={m.pressed} onclick={handleMethod}>
+                    <lightning-icon icon-name={m.icon} size="small" class="method-icon"></lightning-icon>
+                    <span class="name">{m.label}</span>
+                    <span class="meta">{m.hint}</span>
+                </button>
+            </template>
+        </div>
+
+        <template lwc:if={isBluetooth}>
+            <div class="label">Paper width</div>
+            <div class="chips">
+                <template for:each={widthChips} for:item="w">
+                    <button key={w.value} class={w.cls} data-value={w.value} aria-pressed={w.pressed}
+                        onclick={handleWidth}>{w.label}</button>
+                </template>
+            </div>
+            <p class="meta hint">RPD-588 and other 2-inch printers use 58 mm.</p>
+
+            <div class="label">Feed after printing</div>
+            <div class="chips">
+                <template for:each={feedChips} for:item="f">
+                    <button key={f.value} class={f.cls} data-value={f.value} aria-pressed={f.pressed}
+                        onclick={handleFeed}>{f.label}</button>
+                </template>
+            </div>
+            <p class="meta hint">Blank paper fed at the end so you can tear it off. Use the shortest option where the last line still clears the tear edge.</p>
+
+            <div class="label">Barcode format</div>
+            <div class="chips">
+                <template for:each={barcodeModeChips} for:item="m">
+                    <button key={m.value} class={m.cls} data-value={m.value} aria-pressed={m.pressed}
+                        onclick={handleBarcodeMode}>{m.label}</button>
+                </template>
+            </div>
+            <p class="meta hint">Keep Standard for the RPD-588: the app draws the exact barcode, so scanners read only your code. The printer's command suits Epson-style printers only.</p>
+        </template>
+
+        <lightning-input class="toggle" type="toggle" label="Print automatically after saving a bill"
+            message-toggle-active="On" message-toggle-inactive="Off" checked={settings.autoPrint}
+            onchange={handleAutoPrint}></lightning-input>
+
+        <template lwc:if={isIos}>
+            <template lwc:if={isBluetooth}>
+                <lightning-input class="field-gap" label="iPhone print app link" value={settings.iosTemplate}
+                    placeholder="e.g. printapp://print?data={base64}"
+                    field-level-help="Link of an iOS printing app that accepts ESC/POS data. {base64} is replaced with the receipt."
+                    onchange={handleIosTemplate}></lightning-input>
+            </template>
+        </template>
+
+        <template lwc:if={isBluetooth}>
+            <div class="actions">
+                <button class="primary-btn" onclick={handleTestPrint}>Print test page</button>
+                <template lwc:if={manualUrl}>
+                    <a class="secondary-btn manual" href={manualUrl}>Nothing printed? Tap here</a>
+                </template>
+            </div>
+        </template>
+        <template lwc:if={bluetoothOnDesktop}>
+            <p class="warn hint">Bluetooth printing works from the Salesforce app on a phone. On a computer, use Receipt page.</p>
+        </template>
+    </div>
+
+    <template lwc:if={isBluetooth}>
+        <div class="panel">
+            <h2 class="panel-title">Setup guide</h2>
+
+            <details class="guide" open={isAndroid}>
+                <summary class="name">Android</summary>
+                <ol class="steps">
+                    <li>Install <strong>RawBT</strong> (RawBT inkless print service) from the Play Store.</li>
+                    <li>Turn on the RPD-588 and pair it in Android Bluetooth settings. The PIN is usually 0000 or 1234.</li>
+                    <li>Open RawBT → Settings: connection <strong>Bluetooth</strong>, pick the printer, driver <strong>ESC/POS</strong>, paper <strong>58 mm</strong>.</li>
+                    <li>Come back here and tap <strong>Print test page</strong>. If Android asks which app to open, choose RawBT → Always.</li>
+                </ol>
+            </details>
+
+            <details class="guide" open={isIos}>
+                <summary class="name">iPhone</summary>
+                <ol class="steps">
+                    <li>iPhones can only use Bluetooth printers that support <strong>Bluetooth Low Energy (BLE)</strong>. Many cheap printers only support classic Bluetooth.</li>
+                    <li>To check, install a printing app such as <strong>BR RawPrinter</strong> and search for printers. If it finds the RPD-588, the printer works with iPhone.</li>
+                    <li>Until a link-based print app is set up above, choose <strong>Receipt page</strong>, then share the page to your printing app.</li>
+                </ol>
+            </details>
+        </div>
+    </template>
+
+    <c-pos-storage></c-pos-storage>
+</template>

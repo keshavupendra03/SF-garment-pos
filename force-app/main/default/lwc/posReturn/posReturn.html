@@ -1,0 +1,209 @@
+<template>
+    <div class="ret">
+        <div class="ret-head">
+            <button class="icon-btn icon-btn_ghost" aria-label="Back" title="Back" onclick={handleBack}>
+                <lightning-icon icon-name="utility:back" size="x-small"></lightning-icon>
+            </button>
+            <h2 class="panel-title ret-title">Return / Exchange</h2>
+            <button class="link-btn" onclick={handleClose}>Close</button>
+        </div>
+
+        <ol class="steps" aria-label="Progress">
+            <template for:each={stepper} for:item="s">
+                <li key={s.key} class={s.cls}>
+                    <span class="step-num">{s.num}</span>
+                    <span class="step-label">{s.label}</span>
+                </li>
+            </template>
+        </ol>
+
+        <!-- ============ 1. FIND ============ -->
+        <template lwc:if={isFind}>
+            <div class="panel">
+                <div class="label first-label">Find the bill</div>
+                <div class="search-row">
+                    <lightning-input data-id="query" class="grow" type="search" variant="label-hidden"
+                        label="Bill number or mobile" placeholder="Scan receipt barcode, bill no. or mobile"
+                        value={query} onchange={handleQuery} onkeyup={handleQueryKey}></lightning-input>
+                    <button class="primary-btn search-btn" disabled={searching} onclick={handleSearch}>Find</button>
+                </div>
+                <p class="meta hint">Every receipt has a barcode at the bottom. Scan it to jump straight to the bill.</p>
+                <template lwc:if={error}>
+                    <p class="error-text">{error}</p>
+                </template>
+            </div>
+
+            <div class="list-holder">
+                <template lwc:if={searching}>
+                    <lightning-spinner alternative-text="Searching bills" size="small"></lightning-spinner>
+                </template>
+                <template lwc:if={hasResults}>
+                    <ul class="card-list">
+                        <template for:each={resultCards} for:item="r">
+                            <li key={r.no} class={r.cls}>
+                                <button class="result-btn" data-no={r.no} disabled={r.disabled} onclick={handlePick}>
+                                    <span class="result-main">
+                                        <span class="name">{r.title}</span>
+                                        <span class="meta">{r.meta}</span>
+                                        <span class="meta">{r.customer} · {r.items}</span>
+                                    </span>
+                                    <span class="result-side">
+                                        <span class="name">{r.total}</span>
+                                        <template lwc:if={r.badge}><span class={r.badgeCls}>{r.badge}</span></template>
+                                    </span>
+                                </button>
+                            </li>
+                        </template>
+                    </ul>
+                </template>
+                <template lwc:if={noResults}>
+                    <div class="panel empty">
+                        <lightning-icon icon-name="utility:search" size="medium"></lightning-icon>
+                        <p class="empty-title">No bill found</p>
+                        <p class="empty-sub">Bills from the last 120 days are searched. Check the number, or try the customer's mobile.</p>
+                    </div>
+                </template>
+            </div>
+        </template>
+
+        <!-- ============ 2. ITEMS ============ -->
+        <template lwc:if={isItems}>
+            <div class="panel">
+                <div class="bill-head">
+                    <div>
+                        <div class="name">{billHeader.no}</div>
+                        <div class="meta">{billHeader.meta}</div>
+                        <div class="meta">{billHeader.customer}</div>
+                    </div>
+                    <button class="secondary-btn" onclick={handleAll}>Return all</button>
+                </div>
+                <template lwc:if={pastWindow}>
+                    <p class="notice">{windowText}</p>
+                </template>
+            </div>
+
+            <div class="panel">
+                <div class="label first-label">Items coming back</div>
+                <ul class="ret-lines">
+                    <template for:each={itemRows} for:item="r">
+                        <li key={r.idx} class={r.rowCls}>
+                            <div class="ret-top">
+                                <span class="swatch" style={r.swatch}></span>
+                                <div class="ret-info">
+                                    <div class="name">{r.name}</div>
+                                    <div class="meta">{r.meta}</div>
+                                    <div class="meta">{r.soldText} · {r.paid}</div>
+                                </div>
+                                <template lwc:if={r.none}>
+                                    <span class="pill">All returned</span>
+                                </template>
+                                <template lwc:else>
+                                    <div class="stepper">
+                                        <button class="step-btn" aria-label="One less" data-idx={r.idx} data-delta="-1"
+                                            disabled={r.decDisabled} onclick={handleQtyStep}>
+                                            <lightning-icon icon-name="utility:dash" size="x-small"></lightning-icon>
+                                        </button>
+                                        <span class="step-value" aria-label="Quantity to return">{r.q}</span>
+                                        <button class="step-btn" aria-label="One more" data-idx={r.idx} data-delta="1"
+                                            disabled={r.incDisabled} onclick={handleQtyStep}>
+                                            <lightning-icon icon-name="utility:add" size="x-small"></lightning-icon>
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+                            <template lwc:if={r.selected}>
+                                <div class="ret-extra">
+                                    <button class={r.restockCls} data-idx={r.idx} onclick={handleRestock}
+                                        title="Tap to switch between back to stock and damaged">{r.restockLabel}</button>
+                                    <span class="name">{r.amountText}</span>
+                                </div>
+                            </template>
+                        </li>
+                    </template>
+                </ul>
+
+                <div class="label">Reason (optional)</div>
+                <div class="chips">
+                    <template for:each={reasonChips} for:item="c">
+                        <button key={c.value} class={c.cls} data-value={c.value} aria-pressed={c.pressed}
+                            onclick={handleReason}>{c.value}</button>
+                    </template>
+                </div>
+            </div>
+
+            <div class="action-bar">
+                <div class="bar-text">
+                    <div class="meta">{itemsSummary}</div>
+                </div>
+                <button class="primary-btn bar-btn" disabled={itemsNextDisabled} onclick={handleToOutcome}>Next</button>
+            </div>
+        </template>
+
+        <!-- ============ 3. OUTCOME ============ -->
+        <template lwc:if={isOutcome}>
+            <div class="panel credit-panel">
+                <div class="meta">Credit for returned items</div>
+                <div class="credit">{totals.creditText}</div>
+                <div class="meta">{totals.pieces} piece(s) · includes GST {totals.taxText}</div>
+            </div>
+
+            <div class="panel">
+                <div class="label first-label">What does the customer want?</div>
+                <div class="outcome-grid" role="group" aria-label="Outcome">
+                    <template for:each={outcomeCards} for:item="o">
+                        <button key={o.value} class={o.cls} data-value={o.value} aria-pressed={o.pressed}
+                            onclick={handleOutcome}>
+                            <lightning-icon icon-name={o.icon} size="small" class="outcome-icon"></lightning-icon>
+                            <span class="name">{o.label}</span>
+                            <span class="meta">{o.hint}</span>
+                        </button>
+                    </template>
+                </div>
+
+                <template lwc:if={isRefund}>
+                    <div class="label">Refund by</div>
+                    <div class="pay-grid" role="group" aria-label="Refund method">
+                        <template for:each={refundTiles} for:item="t">
+                            <button key={t.value} class={t.cls} data-value={t.value} aria-pressed={t.pressed}
+                                disabled={t.disabled} onclick={handleRefundMode}>
+                                <lightning-icon icon-name={t.icon} size="small" class="pay-icon"></lightning-icon>
+                                <span>{t.label}</span>
+                            </button>
+                        </template>
+                    </div>
+                </template>
+                <p class="meta hint">{outcomeHint}</p>
+            </div>
+
+            <div class="action-bar">
+                <button class="primary-btn" disabled={saving} onclick={handleConfirm}>{confirmLabel}</button>
+            </div>
+        </template>
+
+        <!-- ============ 4. DONE ============ -->
+        <template lwc:if={isDone}>
+            <div class="panel done">
+                <lightning-icon icon-name="utility:success" size="large" class="done-icon"></lightning-icon>
+                <p class="done-title">{doneTitle}</p>
+                <p class="meta">{doneText}</p>
+                <div class="done-actions">
+                    <button class="secondary-btn" onclick={handlePrint}>
+                        <lightning-icon icon-name="utility:print" size="x-small"></lightning-icon>Print credit note
+                    </button>
+                    <template lwc:if={canShare}>
+                        <button class="secondary-btn" onclick={handleShare}>
+                            <lightning-icon icon-name="utility:share" size="x-small"></lightning-icon>WhatsApp
+                        </button>
+                    </template>
+                </div>
+                <template lwc:if={manualPrintUrl}>
+                    <a class="manual-print" href={manualPrintUrl}>Nothing printed? Tap here</a>
+                </template>
+            </div>
+            <div class="action-bar">
+                <button class="secondary-btn" onclick={handleNewReturn}>New return</button>
+                <button class="primary-btn bar-btn" onclick={handleClose}>Back to billing</button>
+            </div>
+        </template>
+    </div>
+</template>

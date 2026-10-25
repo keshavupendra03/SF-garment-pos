@@ -1,0 +1,48 @@
+﻿<template>
+    <div class="panel holder">
+        <div class="panel-head">
+            <h2 class="panel-title">Storage</h2>
+            <button class="icon-btn icon-btn_ghost" title="Refresh" aria-label="Refresh storage" onclick={load}>
+                <lightning-icon icon-name="utility:refresh" size="x-small"></lightning-icon>
+            </button>
+        </div>
+        <template lwc:if={loading}>
+            <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+        </template>
+        <template lwc:if={error}>
+            <p class="error-text">{error}</p>
+        </template>
+        <template lwc:if={info}>
+            <div class="meter-block">
+                <div class="meter-head">
+                    <span class="name">File storage</span>
+                    <span class="meter-value">{file.value}%</span>
+                </div>
+                <div class="meter" role="progressbar" aria-label="File storage used" aria-valuemin="0" aria-valuemax="100"
+                    aria-valuenow={file.value}>
+                    <div class={file.cls} style={file.style}></div>
+                </div>
+                <div class="meta">{fileText}</div>
+                <div class="meta">{fileDetail}</div>
+            </div>
+
+            <div class="meter-block">
+                <div class="meter-head">
+                    <span class="name">Data storage</span>
+                    <span class="meter-value">{data.value}%</span>
+                </div>
+                <div class="meter" role="progressbar" aria-label="Data storage used" aria-valuemin="0" aria-valuemax="100"
+                    aria-valuenow={data.value}>
+                    <div class={data.cls} style={data.style}></div>
+                </div>
+                <div class="meta">{dataText}</div>
+                <div class="meta">{dataDetail}</div>
+            </div>
+
+            <p class="meta note">
+                These figures cover this app's data only. Bills and customers are stored as JSON files (file storage),
+                and products as records (data storage). Check Setup → Storage Usage for the whole org.
+            </p>
+        </template>
+    </div>
+</template>

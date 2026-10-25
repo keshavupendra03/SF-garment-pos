@@ -1,0 +1,126 @@
+<apex:page controller="PosReceiptController" showHeader="false" sidebar="false" standardStylesheets="false"
+    applyHtmlTag="false" applyBodyTag="false" docType="html-5.0">
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Receipt</title>
+    <style>
+        @page { size: 80mm auto; margin: 3mm; }
+        body { font-family: "Courier New", monospace; font-size: 12px; color: #000; margin: 0; }
+        .receipt { width: 74mm; margin: 0 auto; }
+        .center { text-align: center; }
+        .right { text-align: right; }
+        .shop { font-size: 16px; font-weight: bold; }
+        .title { text-align: center; font-weight: bold; margin: 6px 0; border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 2px 0; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 1px 0; vertical-align: top; }
+        thead th { border-bottom: 1px dashed #000; text-align: left; }
+        .small { font-size: 10px; }
+        .rule { border-top: 1px dashed #000; margin: 4px 0; }
+        .grand td { font-size: 15px; font-weight: bold; border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 3px 0; }
+        .error { font-family: sans-serif; padding: 24px; color: #b00; }
+        @media screen { body { background: #f3f3f3; } .receipt { background: #fff; padding: 12px; margin-top: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.2); } }
+    </style>
+</head>
+<body>
+    <apex:outputPanel layout="block" styleClass="error" rendered="{!NOT(ISBLANK(errorMessage))}">
+        <apex:outputText value="{!errorMessage}" />
+    </apex:outputPanel>
+
+    <apex:outputPanel layout="block" styleClass="receipt" rendered="{!ISBLANK(errorMessage)}">
+        <div class="center">
+            <div class="shop"><apex:outputText value="{!store.Name}" /></div>
+            <apex:outputPanel layout="block" rendered="{!NOT(ISBLANK(store.Address__c))}"><apex:outputText value="{!store.Address__c}" /></apex:outputPanel>
+            <apex:outputPanel layout="block" rendered="{!NOT(ISBLANK(store.Phone__c))}">Ph: <apex:outputText value="{!store.Phone__c}" /></apex:outputPanel>
+            <apex:outputPanel layout="block" rendered="{!NOT(ISBLANK(store.GSTIN__c))}">GSTIN: <apex:outputText value="{!store.GSTIN__c}" /></apex:outputPanel>
+        </div>
+        <div class="title"><apex:outputText value="{!docTitle}" /></div>
+        <table>
+            <tr>
+                <td>Bill: <apex:outputText value="{!billNo}" /></td>
+                <td class="right"><apex:outputText value="{!billDate}" />&nbsp;<apex:outputText value="{!billTime}" /></td>
+            </tr>
+            <apex:outputPanel layout="none" rendered="{!NOT(ISBLANK(customerMobile))}">
+                <tr>
+                    <td colspan="2">Customer: <apex:outputText value="{!customerName}" />&nbsp;(<apex:outputText value="{!customerMobile}" />)</td>
+                </tr>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!isCreditNote}">
+                <tr><td colspan="2">Against bill: <apex:outputText value="{!refBillNo}" /> (<apex:outputText value="{!refBillDate}" />)</td></tr>
+                <apex:outputPanel layout="none" rendered="{!NOT(ISBLANK(returnReason))}">
+                    <tr><td colspan="2" class="small">Reason: <apex:outputText value="{!returnReason}" /></td></tr>
+                </apex:outputPanel>
+            </apex:outputPanel>
+            <tr><td colspan="2" class="small">Cashier: <apex:outputText value="{!cashier}" /></td></tr>
+        </table>
+
+        <table style="margin-top:4px">
+            <thead>
+                <tr><th>Item</th><th class="right">Qty</th><th class="right">Rate</th><th class="right">Amt</th></tr>
+            </thead>
+            <tbody>
+                <apex:repeat value="{!lines}" var="l">
+                    <tr>
+                        <td><apex:outputText value="{!l.name}" /><div class="small"><apex:outputText value="{!l.detail}" /></div></td>
+                        <td class="right"><apex:outputText value="{0,number,0}"><apex:param value="{!l.qty}" /></apex:outputText></td>
+                        <td class="right"><apex:outputText value="{0,number,0.00}"><apex:param value="{!l.price}" /></apex:outputText></td>
+                        <td class="right"><apex:outputText value="{0,number,0.00}"><apex:param value="{!l.amount}" /></apex:outputText></td>
+                    </tr>
+                </apex:repeat>
+            </tbody>
+        </table>
+
+        <div class="rule"></div>
+        <table>
+            <tr><td>Items</td><td class="right"><apex:outputText value="{0,number,0}"><apex:param value="{!itemCount}" /></apex:outputText></td></tr>
+            <tr><td>Gross</td><td class="right"><apex:outputText value="{0,number,#,##0.00}"><apex:param value="{!subTotal}" /></apex:outputText></td></tr>
+            <apex:outputPanel layout="none" rendered="{!discount > 0}">
+                <tr><td>Discount</td><td class="right">-<apex:outputText value="{0,number,#,##0.00}"><apex:param value="{!discount}" /></apex:outputText></td></tr>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!roundOff != 0}">
+                <tr><td>Round off</td><td class="right"><apex:outputText value="{0,number,#,##0.00}"><apex:param value="{!roundOff}" /></apex:outputText></td></tr>
+            </apex:outputPanel>
+            <tr class="grand"><td>TOTAL</td><td class="right">Rs. <apex:outputText value="{0,number,#,##0.00}"><apex:param value="{!grandTotal}" /></apex:outputText></td></tr>
+        </table>
+
+        <table class="small" style="margin-top:4px">
+            <thead><tr><th>GST%</th><th class="right">Taxable</th><th class="right">CGST</th><th class="right">SGST</th></tr></thead>
+            <apex:repeat value="{!taxRows}" var="t">
+                <tr>
+                    <td><apex:outputText value="{0,number,0.##}"><apex:param value="{!t.rate}" /></apex:outputText>%</td>
+                    <td class="right"><apex:outputText value="{0,number,0.00}"><apex:param value="{!t.taxable}" /></apex:outputText></td>
+                    <td class="right"><apex:outputText value="{0,number,0.00}"><apex:param value="{!t.cgst}" /></apex:outputText></td>
+                    <td class="right"><apex:outputText value="{0,number,0.00}"><apex:param value="{!t.sgst}" /></apex:outputText></td>
+                </tr>
+            </apex:repeat>
+            <tr><td colspan="3">Total GST (incl.)</td><td class="right"><apex:outputText value="{0,number,0.00}"><apex:param value="{!taxTotal}" /></apex:outputText></td></tr>
+        </table>
+
+        <div class="rule"></div>
+        <table>
+            <apex:repeat value="{!payments}" var="p">
+                <tr><td><apex:outputText value="{!payVerb}" /> (<apex:outputText value="{!p.mode}" />)</td><td class="right"><apex:outputText value="{0,number,#,##0.00}"><apex:param value="{!p.amount}" /></apex:outputText></td></tr>
+            </apex:repeat>
+            <apex:outputPanel layout="none" rendered="{!noteBalance > 0}">
+                <tr><td>Credit note balance</td><td class="right"><apex:outputText value="{0,number,#,##0.00}"><apex:param value="{!noteBalance}" /></apex:outputText></td></tr>
+                <tr><td colspan="2" class="small">Show this note to use it on your next purchase.</td></tr>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!change > 0}">
+                <tr><td>Change</td><td class="right"><apex:outputText value="{0,number,#,##0.00}"><apex:param value="{!change}" /></apex:outputText></td></tr>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!creditDue > 0}">
+                <tr><td>On credit (due)</td><td class="right"><apex:outputText value="{0,number,#,##0.00}"><apex:param value="{!creditDue}" /></apex:outputText></td></tr>
+            </apex:outputPanel>
+            <apex:outputPanel layout="none" rendered="{!points > 0}">
+                <tr><td>Points earned</td><td class="right"><apex:outputText value="{0,number,0}"><apex:param value="{!points}" /></apex:outputText></td></tr>
+            </apex:outputPanel>
+        </table>
+
+        <div class="center small" style="margin-top:8px; white-space:pre-line">
+            <apex:outputText value="{!IF(ISBLANK(store.Receipt_Footer__c), 'Thank you for shopping with us!', store.Receipt_Footer__c)}" />
+        </div>
+        <script>window.addEventListener('load', function () { window.print(); });</script>
+    </apex:outputPanel>
+</body>
+</html>
+</apex:page>
