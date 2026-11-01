@@ -34,12 +34,24 @@ public with sharing class PosBillCalc {
             }
             Decimal q = li.q;
             Decimal dp = nz(li.dp, 0);
+            Decimal da = r2(nz(li.da, 0));
             if (dp < 0 || dp > 100) {
                 throw new CalcException('Item discount must be between 0 and 100%.');
             }
-            Decimal price = nz(p.Price__c, 0);
+            if (da < 0) {
+                throw new CalcException('Item discount cannot be negative.');
+            }
+            if (dp > 0 && da > 0) {
+                throw new CalcException('Use either a % or a ₹ discount on ' + p.Name + ', not both.');
+            }
+            // Small shops agree prices per customer, so the counter may override the catalog price.
+            Decimal listPrice = nz(p.Price__c, 0);
+            Decimal price = li.price == null ? listPrice : r2(li.price);
+            if (price <= 0) {
+                throw new CalcException('Price of ' + p.Name + ' must be more than zero.');
+            }
             Decimal lineGross = r2(price * q);
-            Decimal ld = r2(lineGross * dp / 100);
+            Decimal ld = da > 0 ? (da > lineGross ? lineGross : da) : r2(lineGross * dp / 100);
             Decimal n0 = lineGross - ld;
             gross += lineGross;
             lineDiscounts += ld;
@@ -55,8 +67,12 @@ public with sharing class PosBillCalc {
                 'q' => q,
                 'p' => price,
                 'dp' => dp,
+                'da' => da > 0 ? (da > lineGross ? lineGross : da) : 0,
                 'ld' => ld
             });
+            if (price != listPrice) {
+                lines[lines.size() - 1].put('lp', listPrice); // catalog price, kept when the price was changed
+            }
         }
 
         Decimal bd = r2(nz(input.billDiscount, 0));

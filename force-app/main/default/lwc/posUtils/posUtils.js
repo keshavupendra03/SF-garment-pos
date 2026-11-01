@@ -275,7 +275,8 @@ export function errorMessage(error) {
 
 /**
  * @param store  POS_Store__c settings (tax slabs)
- * @param cart   [{ id, price, q, dp }]  price is GST inclusive, dp = item discount %
+ * @param cart   [{ id, price, q, dp, da }]  price is GST inclusive (may be changed at the counter);
+ *               dp = item discount %, da = item discount in ₹ for the whole line (only one is used)
  * @param billDiscount flat amount off the whole bill
  */
 export function computeBill(store, cart, billDiscount) {
@@ -286,7 +287,7 @@ export function computeBill(store, cart, billDiscount) {
 
     const lines = cart.map((c) => {
         const gross = round2(c.price * c.q);
-        const ld = round2((gross * num(c.dp)) / 100);
+        const ld = num(c.da) > 0 ? Math.min(round2(num(c.da)), gross) : round2((gross * num(c.dp)) / 100);
         return { ...c, gross, ld, net0: round2(gross - ld) };
     });
     const totalNet0 = round2(lines.reduce((t, l) => t + l.net0, 0));

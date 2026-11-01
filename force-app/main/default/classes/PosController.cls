@@ -17,7 +17,9 @@ public with sharing class PosController {
     public class LineInput {
         public Id id;
         public Decimal q;
-        public Decimal dp;
+        public Decimal dp; // item discount in %
+        public Decimal da; // item discount in rupees for the whole line (only one of dp / da)
+        public Decimal price; // price per piece agreed at the counter; null = product price
     }
 
     public class PaymentInput {

@@ -27,7 +27,8 @@ import { loadSettings, printBill } from 'c/posPrint';
 import { normalizeScan } from 'c/posBarcode';
 
 const MAX_SUGGESTIONS = 8;
-const DISCOUNT_PRESETS = [0, 5, 10, 15, 20];
+const PERCENT_PRESETS = [0, 5, 10, 15, 20];
+const AMOUNT_PRESETS = [0, 50, 100, 200, 500];
 const ALL = 'All';
 
 export default class PosBilling extends NavigationMixin(LightningElement) {
@@ -132,7 +133,10 @@ export default class PosBilling extends NavigationMixin(LightningElement) {
                 .filter((l) => this.productsById.has(l.id))
                 .map((l) => {
                     const p = this.productsById.get(l.id);
-                    return { ...l, price: num(p.Price__c), stock: num(p.Stock__c) };
+                    const listPrice = num(p.Price__c);
+                    // Keep a price the cashier agreed with the customer; follow catalog changes otherwise.
+                    const price = l.price === l.listPrice ? listPrice : l.price;
+                    return { ...l, listPrice, price, stock: num(p.Stock__c) };
                 });
             this.recalc();
         } catch (error) {
@@ -492,10 +496,13 @@ export default class PosBilling extends NavigationMixin(LightningElement) {
                     name: p.Name,
                     meta: [p.Size__c, p.Color__c, p.SKU__c].filter(Boolean).join(' · '),
                     swatch: swatchStyle(p.Color__c),
+                    listPrice: num(p.Price__c),
                     price: num(p.Price__c),
                     stock: num(p.Stock__c),
                     q: 1,
-                    dp: 0
+                    discMode: 'pct', // 'pct' | 'amt'; only one discount type applies per line
+                    dp: 0,
+                    da: 0
                 }
             ];
         }
@@ -534,15 +541,43 @@ export default class PosBilling extends NavigationMixin(LightningElement) {
                 decLabel: l.q > 1 ? 'Decrease quantity' : 'Remove item',
                 editing,
                 expanded: String(editing),
-                discountLabel: num(l.dp) > 0 ? `${l.dp}% off` : 'Discount',
-                discountBtnClass: `chip${num(l.dp) > 0 ? ' chip_selected' : ''}`,
-                presets: DISCOUNT_PRESETS.map((value) => ({
-                    value,
-                    label: value ? `${value}%` : 'None',
-                    cls: `chip${num(l.dp) === value ? ' chip_selected' : ''}`
-                }))
+                ...this.lineEditorProps(l)
             };
         });
+    }
+
+    lineEditorProps(l) {
+        const isAmount = l.discMode === 'amt';
+        const current = isAmount ? num(l.da) : num(l.dp);
+        const priceEdited = l.price !== l.listPrice;
+        let discountLabel = 'Discount';
+        if (num(l.da) > 0) {
+            discountLabel = `${moneyShort(l.da)} off`;
+        } else if (num(l.dp) > 0) {
+            discountLabel = `${l.dp}% off`;
+        }
+        return {
+            discountLabel,
+            discountBtnClass: `chip${num(l.dp) > 0 || num(l.da) > 0 ? ' chip_selected' : ''}`,
+            priceChipLabel: `${moneyShort(l.price)} each`,
+            priceBtnClass: `chip${priceEdited ? ' chip_edited' : ''}`,
+            priceEdited,
+            listPriceText: `Usual price ${money(l.listPrice)}`,
+            isAmount,
+            pctModeClass: `seg-btn${isAmount ? '' : ' seg-btn_on'}`,
+            amtModeClass: `seg-btn${isAmount ? ' seg-btn_on' : ''}`,
+            pctPressed: String(!isAmount),
+            amtPressed: String(isAmount),
+            discountValue: current || '',
+            discountInputLabel: isAmount ? 'Discount on this item (₹)' : 'Discount on this item (%)',
+            discountMax: isAmount ? l.gross : 100,
+            discountStep: isAmount ? 1 : 0.01,
+            presets: (isAmount ? AMOUNT_PRESETS : PERCENT_PRESETS).map((value) => ({
+                value,
+                label: value ? (isAmount ? moneyShort(value) : `${value}%`) : 'None',
+                cls: `chip${current === value ? ' chip_selected' : ''}`
+            }))
+        };
     }
 
     updateLine(id, changes) {
@@ -587,18 +622,56 @@ export default class PosBilling extends NavigationMixin(LightningElement) {
         this.editingLineId = this.editingLineId === id ? undefined : id;
     }
 
+    // Sets the line discount in the line's current mode and clears the other type.
+    setLineDiscount(id, value) {
+        const line = this.cart.find((l) => l.id === id);
+        if (!line) {
+            return;
+        }
+        if (line.discMode === 'amt') {
+            const gross = round2(line.price * line.q);
+            this.updateLine(id, { da: Math.min(gross, Math.max(0, round2(num(value)))), dp: 0 });
+        } else {
+            this.updateLine(id, { dp: Math.min(100, Math.max(0, num(value))), da: 0 });
+        }
+    }
+
+    handleDiscountMode(event) {
+        const { id, mode } = event.currentTarget.dataset;
+        const line = this.cart.find((l) => l.id === id);
+        if (line && line.discMode !== mode) {
+            this.updateLine(id, { discMode: mode, dp: 0, da: 0 });
+        }
+    }
+
     handlePresetDiscount(event) {
         const { id, value } = event.currentTarget.dataset;
-        this.updateLine(id, { dp: num(value) });
-        this.editingLineId = undefined;
+        this.setLineDiscount(id, value);
     }
 
     handleDiscountChange(event) {
         const value = event.detail.value;
-        if (value === '' || value === null) {
-            return;
+        this.setLineDiscount(event.target.dataset.id, value === '' || value === null ? 0 : value);
+    }
+
+    handlePriceChange(event) {
+        const value = num(event.detail.value, 0);
+        if (value <= 0) {
+            return; // keep the last valid price while the field is being retyped
         }
-        this.updateLine(event.target.dataset.id, { dp: Math.min(100, Math.max(0, num(value))) });
+        this.updateLine(event.target.dataset.id, { price: round2(value) });
+    }
+
+    handleResetPrice(event) {
+        const id = event.currentTarget.dataset.id;
+        const line = this.cart.find((l) => l.id === id);
+        if (line) {
+            this.updateLine(id, { price: line.listPrice });
+        }
+    }
+
+    handleCloseEditor() {
+        this.editingLineId = undefined;
     }
 
     handleShowBillDiscount() {
@@ -1048,7 +1121,13 @@ export default class PosBilling extends NavigationMixin(LightningElement) {
             mobile: this.hasMobile ? this.mobile : null,
             customerName: this.customerName,
             billDiscount: num(this.billDiscount),
-            lines: this.cart.map((l) => ({ id: l.id, q: l.q, dp: l.dp })),
+            lines: this.cart.map((l) => ({
+                id: l.id,
+                q: l.q,
+                dp: l.discMode === 'amt' ? 0 : l.dp,
+                da: l.discMode === 'amt' ? l.da : 0,
+                price: l.price
+            })),
             payments: [
                 ...(this.cnApplied > 0 ? [{ m: 'CN', a: this.cnApplied, ref: this.creditNote.no }] : []),
                 ...this.payments.filter((p) => num(p.a) > 0).map((p) => ({ m: p.m, a: num(p.a) }))

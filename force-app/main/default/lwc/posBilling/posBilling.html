@@ -184,7 +184,12 @@
                                             <div class="line-info">
                                                 <div class="name">{r.name}</div>
                                                 <div class="meta">{r.meta}</div>
-                                                <div class="meta">{r.priceText} each · GST {r.rate}%</div>
+                                                <div class="meta">
+                                                    {r.priceText} each · GST {r.rate}%
+                                                    <template lwc:if={r.priceEdited}>
+                                                        <span class="edited-tag">price changed</span>
+                                                    </template>
+                                                </div>
                                                 <template lwc:if={r.stockWarning}>
                                                     <div class="warn">{r.stockWarning}</div>
                                                 </template>
@@ -210,23 +215,51 @@
                                                     <lightning-icon icon-name="utility:add" size="x-small"></lightning-icon>
                                                 </button>
                                             </div>
-                                            <button class={r.discountBtnClass} data-id={r.id} aria-expanded={r.expanded}
-                                                onclick={handleToggleDiscount}>
-                                                <lightning-icon icon-name="utility:percent" size="xx-small" class="chip-icon"></lightning-icon>
-                                                {r.discountLabel}
-                                            </button>
+                                            <div class="line-chips">
+                                                <button class={r.priceBtnClass} data-id={r.id} aria-expanded={r.expanded}
+                                                    title="Change the price for this customer" onclick={handleToggleDiscount}>
+                                                    <lightning-icon icon-name="utility:edit" size="xx-small" class="chip-icon"></lightning-icon>
+                                                    {r.priceChipLabel}
+                                                </button>
+                                                <button class={r.discountBtnClass} data-id={r.id} aria-expanded={r.expanded}
+                                                    title="Give a discount on this item" onclick={handleToggleDiscount}>
+                                                    <lightning-icon icon-name="utility:percent" size="xx-small" class="chip-icon"></lightning-icon>
+                                                    {r.discountLabel}
+                                                </button>
+                                            </div>
                                         </div>
                                         <template lwc:if={r.editing}>
                                             <div class="discount-editor">
-                                                <div class="chips">
+                                                <div class="editor-row">
+                                                    <lightning-input class="price-input" type="number" label="Price each (₹)"
+                                                        min="0.01" step="0.01" value={r.price} data-id={r.id}
+                                                        onchange={handlePriceChange}></lightning-input>
+                                                    <template lwc:if={r.priceEdited}>
+                                                        <div class="price-reset">
+                                                            <span class="meta">{r.listPriceText}</span>
+                                                            <button class="link-btn link-btn_flush" data-id={r.id}
+                                                                onclick={handleResetPrice}>Reset</button>
+                                                        </div>
+                                                    </template>
+                                                </div>
+
+                                                <div class="editor-label">Discount</div>
+                                                <div class="segmented" role="group" aria-label="Discount type">
+                                                    <button class={r.pctModeClass} data-id={r.id} data-mode="pct"
+                                                        aria-pressed={r.pctPressed} onclick={handleDiscountMode}>% Percent</button>
+                                                    <button class={r.amtModeClass} data-id={r.id} data-mode="amt"
+                                                        aria-pressed={r.amtPressed} onclick={handleDiscountMode}>₹ Amount</button>
+                                                </div>
+                                                <div class="chips preset-row">
                                                     <template for:each={r.presets} for:item="p">
                                                         <button key={p.value} class={p.cls} data-id={r.id} data-value={p.value}
                                                             onclick={handlePresetDiscount}>{p.label}</button>
                                                     </template>
                                                 </div>
-                                                <lightning-input class="custom-discount" type="number" label="Custom discount %"
-                                                    min="0" max="100" step="0.01" value={r.dp} data-id={r.id}
-                                                    onchange={handleDiscountChange}></lightning-input>
+                                                <lightning-input class="custom-discount" type="number" label={r.discountInputLabel}
+                                                    min="0" max={r.discountMax} step={r.discountStep} value={r.discountValue}
+                                                    data-id={r.id} onchange={handleDiscountChange}></lightning-input>
+                                                <button class="secondary-btn editor-done" onclick={handleCloseEditor}>Done</button>
                                             </div>
                                         </template>
                                     </li>

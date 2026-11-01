@@ -253,6 +253,8 @@ export function buildReceipt(bill, store, width = 58, feed = DEFAULT_TEAR_FEED) 
         r.pair(` ${variant ? `${variant} ` : ''}${l.q} x ${amt(l.p)}`, amt(l.net));
         if (num(l.dp) > 0) {
             r.line(`  (${l.dp}% off)`);
+        } else if (num(l.da) > 0) {
+            r.line(`  (Rs ${amt(l.da)} off)`);
         }
         if (isNote && l.rs === false) {
             r.line('  (damaged, not restocked)');

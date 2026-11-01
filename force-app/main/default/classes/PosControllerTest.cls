@@ -96,6 +96,44 @@ private class PosControllerTest {
     }
 
     @IsTest
+    static void counterPriceAndRupeeDiscount() {
+        // 2 tees sold at an agreed ₹900 each (list ₹1050) with ₹100 off the line.
+        Map<String, Object> bill = PosController.saveBill(JSON.serialize(new Map<String, Object>{
+            'lines' => new List<Object>{
+                new Map<String, Object>{ 'id' => productId('TEE-M'), 'q' => 2, 'price' => 900, 'da' => 100 }
+            },
+            'payments' => pay('CASH', 1700)
+        }));
+        Map<String, Object> line = (Map<String, Object>) ((List<Object>) bill.get('l'))[0];
+        Assert.areEqual(900, (Decimal) line.get('p'));
+        Assert.areEqual(1050, (Decimal) line.get('lp'), 'list price kept when the price was changed');
+        Assert.areEqual(100, (Decimal) line.get('ld'));
+        Assert.areEqual(1700, (Decimal) bill.get('g'));
+        Assert.areEqual(80.95, (Decimal) bill.get('tx'));
+
+        try {
+            PosController.saveBill(JSON.serialize(new Map<String, Object>{
+                'lines' => new List<Object>{
+                    new Map<String, Object>{ 'id' => productId('TEE-M'), 'q' => 1, 'dp' => 10, 'da' => 50 }
+                },
+                'payments' => pay('CASH', 2000)
+            }));
+            Assert.fail('Expected % and ₹ discount together to fail');
+        } catch (AuraHandledException e) {
+            Assert.isTrue(e.getMessage().contains('not both'), e.getMessage());
+        }
+        try {
+            PosController.saveBill(JSON.serialize(new Map<String, Object>{
+                'lines' => new List<Object>{ new Map<String, Object>{ 'id' => productId('TEE-M'), 'q' => 1, 'price' => 0 } },
+                'payments' => pay('CASH', 2000)
+            }));
+            Assert.fail('Expected zero price to fail');
+        } catch (AuraHandledException e) {
+            Assert.isTrue(e.getMessage().contains('more than zero'), e.getMessage());
+        }
+    }
+
+    @IsTest
     static void rejectsShortPayment() {
         try {
             PosController.saveBill(billJson(null, standardLines(), pay('UPI', 100)));

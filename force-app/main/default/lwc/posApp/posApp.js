@@ -13,6 +13,23 @@ export default class PosApp extends LightningElement {
     // Panes render on first visit and then stay mounted (hidden), so the open bill survives tab switches.
     visited = { billing: true };
 
+    connectedCallback() {
+        this.disablePullToRefresh();
+    }
+
+    // In the Salesforce mobile app a downward swipe at the top of the page reloads it, which wipes an
+    // open bill and fights with scrolling long lists. Every POS screen lives inside this component,
+    // so turning it off here covers them all. Desktop and other containers ignore the event.
+    disablePullToRefresh() {
+        this.dispatchEvent(
+            new CustomEvent('updateScrollSettings', {
+                detail: { isPullToRefreshEnabled: false },
+                bubbles: true,
+                composed: true
+            })
+        );
+    }
+
     get tabs() {
         return TABS.map((t) => {
             const isActive = t.name === this.active;
